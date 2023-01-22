@@ -1,4 +1,11 @@
 #include "../include/AliLWUtils.h"
+
+
+ClassImp(AliLWTPCTrack);
+ClassImp(AliLWFMDTrack);
+ClassImp(AliLWEvent);
+
+
 AliLWTPCTrack::AliLWTPCTrack():fPt(-1),fPhi(-999),fEta(-999),fTrFlag(1) {};
 AliLWTPCTrack::AliLWTPCTrack(Float_t pt, Float_t phi, Float_t eta, Short_t trFlag):fPt(pt),fPhi(phi),fEta(eta),fTrFlag(trFlag) {};
 AliLWTPCTrack::~AliLWTPCTrack() {};

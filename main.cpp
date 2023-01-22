@@ -8,7 +8,9 @@
 #include <TFile.h>
 #include <TTree.h>
 
+#include "TObject.h"
 #include "AliLWUtils.h"
+
 
 
 int main() {
