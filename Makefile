@@ -24,11 +24,12 @@ SOURCES = src/AliLWUtils.cxx
 #in the future it might cause issues.
 
 
-
+#Original all: had a rootDict.cxx in the g++ compilation line.
 
 #Commands
 all: main.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o main main.cpp AliLWUtils.o rootDict.cxx -lROOTlibs $(ROOT)  
+	$(RUNL) -o main main.cpp AliLWUtils.o -lROOTlibs $(ROOT) 
+	make clean1
 
 
 
@@ -55,6 +56,21 @@ libROOTlibs.so: rootDict.cxx $(SOURCES)
 	$(CXX) -shared -o$@ -I $(ROOTSYS)/include $^ $(ROOT) -fPIC 
 
 
+
+#Cleans away garbage created during compilation 
+clean1: 
+	rm *.o
+	rm include/*.gch
+	rm rootDict.cxx
+	
+
+#Cleans away the files needed to run the program
+clean2:
+	rm *.pcm
+	rm *.so
+	rm main
+
+#Cleans away everything
 clean: 
 	rm *.o
 	rm *.so
@@ -64,4 +80,4 @@ clean:
 	rm main
 
 
-.PHONY: all clean
+.PHONY: all clean1 clean2 clean
