@@ -13,6 +13,7 @@
 #include <TRint.h>
 #include <TApplication.h>
 #include <TBranch.h>
+#include <TGraph.h>
 #include <TCanvas.h>
 #include <TH1D.h>
 #include <TClonesArray.h>
@@ -28,7 +29,8 @@ int main(int argc, char **argv) {
     //Makes the histogram
     TRint* app = new TRint("app", &argc, argv);
     TCanvas* canvas = new TCanvas("canvas", "Title", 0, 0 ,800,600);
-    TH1D* histogram = new TH1D("histogram", "Counts", 1000, 0, 2*TMath::Pi());
+    Int_t binCount = 200;
+    TH1D* histogram = new TH1D("histogram", "Counts", binCount, 0, 2*TMath::Pi());
 
     //Reads in the ROOT tree
     TFile* dataFile = new TFile("wipData/sampleData.root", "dataFile", "READ");
@@ -55,7 +57,7 @@ int main(int argc, char **argv) {
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    //if (dataCount > 200) {dataCount = 2000;};
+    if (dataCount > 200) {dataCount = 100;};
 
 
     for (Int_t n = 0; n < dataCount; n++) {
@@ -83,9 +85,44 @@ int main(int argc, char **argv) {
     }
 
     
+    //TH1D* histDeriv = new TH1D("histDeriv", "Derivative", 1000, 0, 2*TMath::Pi());
+    
+    Int_t frontSkip = 1;
+    Int_t backSkip = 10;
+    Double_t phiVals[binCount-frontSkip-backSkip];
+    Double_t dNVals[binCount-frontSkip-backSkip];
+    Double_t stepLength  {2*TMath::Pi() / binCount};
+    Double_t dN;
+
+
+
+    for (Int_t n = frontSkip; n < binCount-backSkip; n++) {
+        dN = histogram->GetBinContent(n+1) - histogram->GetBinContent(n);
+        Double_t deriv =  dN/stepLength;
+
+        phiVals[n] = stepLength*n;
+        dNVals[n] = deriv;
+    }
+
+    for (Int_t n = 0; n < frontSkip; n++) {
+        phiVals[n] = stepLength*n;
+        dNVals[n] = 0;
+    }
+
+    for (Int_t n = binCount - backSkip; n < binCount; n++) {
+        phiVals[n] = stepLength*n;
+        dNVals[n] = 0;
+    }
+
+    TGraph* graph = new TGraph(binCount-1, phiVals, dNVals);
+    std::cout << "hello" << std::endl;
 
     //Draws the histogram
-    histogram->Draw();
+    //graph->SetMinimum(-20);
+    //graph->SetMaximum(300);
+    graph->SetLineColor(kRed);
+    graph->Draw("AL");
+    //histogram->Draw();
     canvas->Modified(); //Checks if the canvas has been modified in the event loop
     canvas->Update();
     app->Run();
