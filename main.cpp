@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "include/storeInHist.h"
+
 //ROOT
 #include <TFile.h>
 #include <TTree.h>
@@ -26,6 +28,9 @@
 
 
 int main(int argc, char **argv) {
+
+    storeInHist a {"hej"};
+
     //Makes the histogram
     TRint* app = new TRint("app", &argc, argv);
     TCanvas* canvas = new TCanvas("canvas", "Title", 0, 0 ,800,600);
@@ -115,14 +120,14 @@ int main(int argc, char **argv) {
     }
 
     TGraph* graph = new TGraph(binCount-1, phiVals, dNVals);
-    std::cout << "hello" << std::endl;
+    (void)graph;
 
     //Draws the histogram
     //graph->SetMinimum(-20);
     //graph->SetMaximum(300);
-    graph->SetLineColor(kRed);
-    graph->Draw("AL");
-    //histogram->Draw();
+    //graph->SetLineColor(kRed);
+    //graph->Draw("AL");
+    histogram->Draw();
     canvas->Modified(); //Checks if the canvas has been modified in the event loop
     canvas->Update();
     app->Run();
