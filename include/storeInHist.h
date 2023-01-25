@@ -5,7 +5,15 @@
 #include <vector>
 #include <string>
 
+#include "AliLWUtils.h"
+
+#include <TFile.h>
+#include <TTree.h>
+#include <TH1D.h>
 #include <TObject.h>
+#include <TClonesArray.h>
+#include <TMath.h>
+
 
 class storeInHist : TObject {
     private:
@@ -22,7 +30,7 @@ class storeInHist : TObject {
         storeInHist(std::string pathToFile);
 
 
-        
+
         ClassDef(storeInHist, 1);
         
 

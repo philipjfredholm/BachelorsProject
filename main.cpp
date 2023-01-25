@@ -29,11 +29,25 @@
 
 int main(int argc, char **argv) {
 
-    storeInHist a {"hej"};
+    //storeInHist a {"hej"};
 
     //Makes the histogram
     TRint* app = new TRint("app", &argc, argv);
     TCanvas* canvas = new TCanvas("canvas", "Title", 0, 0 ,800,600);
+
+    TFile* dataFile = new TFile("histograms.root", "READ"); 
+    TH1D* histogram = (TH1D*)dataFile->Get("test");
+    dataFile->ls();
+    histogram->Draw();
+    //(void)histogram;
+    canvas->Modified(); //Checks if the canvas has been modified in the event loop
+    canvas->Update();
+    app->Run();
+    dataFile->Close();
+
+
+    
+    /*
     Int_t binCount = 200;
     TH1D* histogram = new TH1D("histogram", "Counts", binCount, 0, 2*TMath::Pi());
 
@@ -132,6 +146,8 @@ int main(int argc, char **argv) {
     canvas->Update();
     app->Run();
     dataFile->Close();
+
+    */
 
     
     /*
