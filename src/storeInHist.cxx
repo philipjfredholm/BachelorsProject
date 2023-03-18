@@ -6,8 +6,8 @@ ClassImp(storeInHist);
 
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     //Opens the file to be read
-    TFile* dataFile = new TFile("wipData/sampleData.root", "dataFile", "READ");
-    TTree* dataTree = (TTree*)dataFile->Get("LWTree");
+    TFile dataFile("wipData/sampleData.root", "dataFile", "READ");
+    TTree* dataTree = (TTree*)dataFile.Get("LWTree");
     Int_t binCount = 200;
     TH1D* histogram = new TH1D("histogram", "Counts", binCount, 0, 2*TMath::Pi());
 
@@ -22,7 +22,7 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
 
 
     //Reads in the data and fills the histogram
-    Int_t dataCount = dataTree->GetEntries();
+    Int_t dataCount = dataTree->GetEntries(); //Number of entries in the tree
     Int_t trackCountTPC;
     Int_t trackCountFMD;
     Double_t phiValTPC;
@@ -32,7 +32,7 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    if (dataCount > 200) {dataCount = 100;};
+    //if (dataCount > 200) {dataCount = 100;};
 
 
     for (Int_t n = 0; n < dataCount; n++) {
@@ -63,16 +63,11 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     //Now all the relevant data is stored in the histogram.
     
 
-    TFile* writeData = new TFile("histograms.root", "RECREATE");
-    writeData->WriteObject(histogram, "test");
+    TFile writeData("histograms.root", "RECREATE");
+    writeData.WriteObject(histogram, "test");
 
-    writeData->Close();
-    dataFile->Close();
-
-
-
-
-
+    writeData.Close();
+    dataFile.Close();
 
 
 }

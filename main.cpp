@@ -4,14 +4,12 @@
 #include <vector>
 
 #include "include/storeInHist.h"
+#include "AliLWUtils.h"
 
 //ROOT
 #include <TFile.h>
 #include <TTree.h>
 #include <TObject.h>
-#include "AliLWUtils.h"
-
-
 #include <TRint.h>
 #include <TApplication.h>
 #include <TBranch.h>
@@ -29,21 +27,21 @@
 
 int main(int argc, char **argv) {
 
-    //storeInHist a {"hej"};
+    storeInHist a {"hej"};
 
     //Makes the histogram
-    TRint* app = new TRint("app", &argc, argv);
-    TCanvas* canvas = new TCanvas("canvas", "Title", 0, 0 ,800,600);
+    TRint app("app", &argc, argv);
+    TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
 
-    TFile* dataFile = new TFile("histograms.root", "READ"); 
-    TH1D* histogram = (TH1D*)dataFile->Get("test");
-    dataFile->ls();
+    TFile dataFile("histograms.root", "READ"); 
+    TH1D* histogram = (TH1D*)dataFile.Get("test");
+    dataFile.ls();
     histogram->Draw();
     //(void)histogram;
-    canvas->Modified(); //Checks if the canvas has been modified in the event loop
-    canvas->Update();
-    app->Run();
-    dataFile->Close();
+    canvas.Modified(); //Checks if the canvas has been modified in the event loop
+    canvas.Update();
+    app.Run();
+    dataFile.Close();
 
 
     

@@ -14,8 +14,8 @@ RUN = $(CXX) $(CXXVER) $(CXXWARS) $(INCLUDES)
 RUNL = $(CXX) $(CXXVER) $(CXXWARS) $(INCLUDES) $(LIBS)
 
 #Needed for ROOT
-HEADERS = include/AliLWUtils.h 
-SOURCES = src/AliLWUtils.cxx
+HEADERS = include/AliLWUtils.h include/storeInHist.h
+SOURCES = src/AliLWUtils.cxx src/storeInHist.cxx
 
 
 #I think the 'root-config --incdirs' command is bugged. In the terminal it gives the path to the include/ directory of the ROOT
@@ -24,18 +24,18 @@ SOURCES = src/AliLWUtils.cxx
 #in the future it might cause issues.
 
 
-#Original all: had a rootDict.cxx in the g++ compilation line.
-
 #Commands
-all: main.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o main main.cpp AliLWUtils.o -lROOTlibs $(ROOT) 
+all: main.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o main main.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 	make clean1
-
 
 
 AliLWUtils.o: include/AliLWUtils.h src/AliLWUtils.cxx
 	$(RUN) -c include/AliLWUtils.h src/AliLWUtils.cxx  $(ROOT)
 
+
+storeInHist.o: include/storeInHist.h src/storeInHist.cxx
+	$(RUN) -c include/storeInHist.h src/storeInHist.cxx $(ROOT)
 
 
 #I have no idea what -p does, but just included it as the ROOT documentation said to do so.
@@ -48,7 +48,7 @@ rootDict.cxx: $(HEADERS) include/LinkDef.h
 # $@ refers to the name of the Make-command and $^ refers to the listed dependencies of said Make-command
 
 #-fPIC seems to do something about "position indepent code". I don't know why it is included,
-#but the compiler gives me an error message and tells me to include when the command is ran without it.
+#but the compiler gives me an error message and tells me to include it when the command is ran without it.
 
 #It would be nice to place this inside ./libs/ , but the way the dictionary is created with paths
 #that does not work.
