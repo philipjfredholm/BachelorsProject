@@ -18,6 +18,7 @@
 class storeInHist : TObject {
     private:
         const std::string _pathToFile;
+        TH1D storedHistogram;
         //std::string _pathToFiles;
         /*
         const std::string _pathToOutput;
@@ -28,6 +29,7 @@ class storeInHist : TObject {
 
     public:
         storeInHist(std::string pathToFile);
+        TH1D getHist();
 
 
 

@@ -27,21 +27,23 @@
 
 int main(int argc, char **argv) {
 
-    storeInHist a {"hej"};
+    storeInHist myHistogram {"wipData/sampleData.root"};
 
     //Makes the histogram
-    TRint app("app", &argc, argv);
+    TApplication app("app", &argc, argv);
     TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
 
-    TFile dataFile("histograms.root", "READ"); 
-    TH1D* histogram = (TH1D*)dataFile.Get("test");
-    dataFile.ls();
-    histogram->Draw();
+    //TFile dataFile("histograms.root", "READ"); 
+    //TH1D* histogram = (TH1D*)dataFile.Get("test");
+    //dataFile.ls();
+
+    TH1D histogram = myHistogram.getHist();
+    histogram.Draw();
     //(void)histogram;
     canvas.Modified(); //Checks if the canvas has been modified in the event loop
     canvas.Update();
     app.Run();
-    dataFile.Close();
+    //dataFile.Close();
 
 
     

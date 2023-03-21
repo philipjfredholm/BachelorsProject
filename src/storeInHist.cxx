@@ -6,9 +6,9 @@ ClassImp(storeInHist);
 
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     //Opens the file to be read
-    TFile dataFile("wipData/sampleData.root", "dataFile", "READ");
+    TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
-    Int_t binCount = 200;
+    Int_t binCount = 20; //Number of bins the interval [0,2pi] is to be divided over
     TH1D* histogram = new TH1D("histogram", "Counts", binCount, 0, 2*TMath::Pi());
 
     //Creates variables to write the read-in variables to.
@@ -21,8 +21,9 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     
 
 
-    //Reads in the data and fills the histogram
+    //Variables needed in the for-loops
     Int_t dataCount = dataTree->GetEntries(); //Number of entries in the tree
+    std::cout << dataCount << std::endl;
     Int_t trackCountTPC;
     Int_t trackCountFMD;
     Double_t phiValTPC;
@@ -32,26 +33,30 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    //if (dataCount > 200) {dataCount = 100;};
+    if (dataCount > 200) {dataCount = 20;}; //For faster read times when debugging
 
-
-    for (Int_t n = 0; n < dataCount; n++) {
+    //Reads in the data and fills the histogram
+    for (Int_t eventNumber = 0; eventNumber < dataCount; eventNumber++) {
         //This loops through each event
-        dataTree->GetEntry(n);
-        trackCountTPC = tpcTrack->GetEntries();
+        dataTree->GetEntry(eventNumber);
+        trackCountTPC = tpcTrack->GetEntries(); //Number of tracks in the current event
         trackCountFMD = fmdTrack->GetEntries();
 
-        for (Int_t m = 0; m < trackCountTPC; m++) {
+        for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
             //This loops through each track in a TPC event
-            currentTrackTPC = static_cast<AliLWTPCTrack*>(tpcTrack->At(m)); //tpcTrack->At(m) is the same as (*tpcTrack)[m]
+            currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]); //tpcTrack->At(m) is the same as (*tpcTrack)[m]
             phiValTPC = currentTrackTPC->fPhi;
             
-            for (Int_t o = 0; o < trackCountFMD; o++) {
+            for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
                 //This loops through each measured angle bin in an FMD event
-                currentTrackFMD = static_cast<AliLWFMDTrack*>(fmdTrack->At(0)); 
+                currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
                 fmdMult = currentTrackFMD->fMult;
                 phiValFMD = currentTrackFMD->fPhi;
                 phiDiff = phiValTPC - phiValFMD;
+                if (phiDiff < 0) {
+                    phiDiff += 2*TMath::Pi();
+                }
+
                 for (Int_t p = 0; p < fmdMult; p++) {
                     //This weights the phi-difference by the number of multiplicities in the FMD
                     histogram->Fill(phiDiff);
@@ -60,14 +65,26 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
         } 
     }
 
-    //Now all the relevant data is stored in the histogram.
     
 
-    TFile writeData("histograms.root", "RECREATE");
+
+
+    //Now all the relevant data is stored.
+    
+    this->storedHistogram = *histogram; //Storing in the class object
+
+    std::string storageLocation = "storedHistograms/" + pathToFile.subtr(pathToFile.find(/), pathToFile.length);
+    std::cout << storageLocation << std::endl;
+    TFile writeData("histograms.root", "RECREATE"); //Storing in a root-file for later read-in
     writeData.WriteObject(histogram, "test");
 
     writeData.Close();
     dataFile.Close();
 
 
+}
+
+
+TH1D storeInHist::getHist() {
+    return this->storedHistogram;
 }
