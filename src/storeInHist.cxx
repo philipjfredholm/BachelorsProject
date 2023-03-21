@@ -33,7 +33,7 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    if (dataCount > 200) {dataCount = 20;}; //For faster read times when debugging
+    if (dataCount > 200) {dataCount = 2000;}; //For faster read times when debugging
 
     //Reads in the data and fills the histogram
     for (Int_t eventNumber = 0; eventNumber < dataCount; eventNumber++) {
@@ -53,12 +53,15 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
                 fmdMult = currentTrackFMD->fMult;
                 phiValFMD = currentTrackFMD->fPhi;
                 phiDiff = phiValTPC - phiValFMD;
+
+                //Makes sures all values are positive
                 if (phiDiff < 0) {
                     phiDiff += 2*TMath::Pi();
                 }
 
+                //This weights the phi-difference by the number of multiplicities in the FMD
                 for (Int_t p = 0; p < fmdMult; p++) {
-                    //This weights the phi-difference by the number of multiplicities in the FMD
+                    
                     histogram->Fill(phiDiff);
                 }
             }
@@ -73,9 +76,16 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     
     this->storedHistogram = *histogram; //Storing in the class object
 
-    std::string storageLocation = "storedHistograms/" + pathToFile.subtr(pathToFile.find(/), pathToFile.length);
+    std::string storageLocation = pathToFile.substr(pathToFile.find("/")+1, pathToFile.length()) +"Processed"+ ".root"; 
     std::cout << storageLocation << std::endl;
-    TFile writeData("histograms.root", "RECREATE"); //Storing in a root-file for later read-in
+    
+    /*bool storageLocationExists = std::filesystem::exists("storedHistograms");
+    if (storageLocationExists == false) {
+        std::filesystem::create_directory("storedHistograms");
+    }
+    */
+
+    TFile writeData(storageLocation.c_str(), "RECREATE"); //Storing in a root-file for later read-in
     writeData.WriteObject(histogram, "test");
 
     writeData.Close();
