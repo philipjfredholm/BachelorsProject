@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include "include/storeInHist.h"
 #include "AliLWUtils.h"

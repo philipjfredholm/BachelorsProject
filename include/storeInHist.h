@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <thread>
 
 #include "AliLWUtils.h"
 
@@ -18,19 +19,23 @@
 
 class storeInHist : TObject {
     private:
+        //Member Variablies
         const std::string _pathToFile;
-        TH2D storedHistogram;
-        //std::string _pathToFiles;
-        /*
-        const std::string _pathToOutput;
-        const Double_t _startHist;
-        const Double_t _endHist;
-        const Int_t _cuts;
-        */
+        TH2D _storedHistogram; //I might define addition for histograms 
+                               // later so this is not marked as const
+
+        //Member functions
+        const TH2D loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
+                                                 Int_t countsX, Int_t countsY);
+
+        void storeHistogramInFile();
+
 
     public:
+
+        //Member Functions
         storeInHist(std::string pathToFile);
-        TH2D getHist();
+        const TH2D getHist();
 
 
 

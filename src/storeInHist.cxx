@@ -5,26 +5,43 @@ ClassImp(storeInHist);
 
 
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
-    //Opens the file to be read
+    //Gets the number of entries in the tree
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
-    Int_t binCount = 15; //Number of bins the interval [0,2pi] is to be divided over
-    TH2D* histogram = new TH2D("histogram", "Counts", binCount, 0, 2*TMath::Pi(), 50, -6, 6);
+    Int_t dataCount = dataTree->GetEntries();
+    dataFile.Close();
+    (void)dataCount;
 
+    Int_t binCountsX = 15;
+    Int_t binCountsY = 50;
+    TH2D histogram = loadHistogram(pathToFile, 0, 200, binCountsX, binCountsY);
+    this->_storedHistogram = histogram;
+    storeHistogramInFile();
+
+
+
+}
+
+
+
+
+const TH2D storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t stop, 
+                                Int_t countsX, Int_t countsY) {
+
+    //Opens the data
+    TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
+    TTree* dataTree = (TTree*)dataFile.Get("LWTree");
+    
 
     //Creates variables to write the read-in variables to.
-    //AliLWEvent* event;
+    //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
     TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack");
     TClonesArray* fmdTrack = new TClonesArray("AliLWFMDTrack");
-    //dataTree->SetBranchAddres("Event", &event);
     dataTree->SetBranchAddress("TPCTracks", &tpcTrack);
     dataTree->SetBranchAddress("FMDTracks", &fmdTrack);
-    
 
 
     //Variables needed in the for-loops
-    Int_t dataCount = dataTree->GetEntries(); //Number of entries in the tree
-    std::cout << dataCount << std::endl;
     Int_t trackCountTPC;
     Int_t trackCountFMD;
     Double_t phiValTPC;
@@ -38,73 +55,79 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     AliLWFMDTrack* currentTrackFMD;
 
 
-    //if (dataCount > 200) {dataCount = 200;}; //For faster read times when debugging
-
     //Reads in the data and fills the histogram
-    for (Int_t eventNumber = 0; eventNumber < dataCount; eventNumber++) {
-        //This loops through each event
+    TH2D histogram("histogram", "Counts", countsX, 0, 2*TMath::Pi(), countsY, -6, 6);
+
+    //Loops through each event
+    for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
         dataTree->GetEntry(eventNumber);
         trackCountTPC = tpcTrack->GetEntries(); //Number of tracks in the current event
         trackCountFMD = fmdTrack->GetEntries();
 
+        
+        //This loops through each track in a TPC event
         for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
-            //This loops through each track in a TPC event
-            currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]); //tpcTrack->At(m) is the same as (*tpcTrack)[m]
+            currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
             phiValTPC = currentTrackTPC->fPhi;
             etaValTPC = currentTrackTPC->fEta;
+
             
+            //This loops through each measured angle bin in an FMD event
             for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
-                //This loops through each measured angle bin in an FMD event
                 currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
                 fmdMult = currentTrackFMD->fMult;
                 phiValFMD = currentTrackFMD->fPhi;
                 etaValFMD = currentTrackFMD->fEta;
                 phiDiff = phiValTPC - phiValFMD;
                 etaDiff = etaValTPC-etaValFMD;
-     
 
                 //Makes sures all values are positive
-                if (phiDiff < 0) {
-                    phiDiff += 2*TMath::Pi();
-                }
+                if (phiDiff < 0) {phiDiff += 2*TMath::Pi();}
 
-                //This weights the phi-difference by the number of multiplicities in the FMD
-                for (Int_t p = 0; p < fmdMult; p++) {
-                    
-                    histogram->Fill(phiDiff, etaDiff);
-                }
+                histogram.Fill(phiDiff, etaDiff, fmdMult);
+
+
             }
         } 
     }
 
-    
 
-
-
-
-    //Now all the relevant data is stored.
-    
-    this->storedHistogram = *histogram; //Storing in the class object
-
-    std::string storageLocation = pathToFile.substr(pathToFile.find("/")+1, pathToFile.length()) +"Processed"+ ".root"; 
-    std::cout << storageLocation << std::endl;
-    
-    /*bool storageLocationExists = std::filesystem::exists("storedHistograms");
-    if (storageLocationExists == false) {
-        std::filesystem::create_directory("storedHistograms");
-    }
-    */
-
-    TFile writeData(storageLocation.c_str(), "RECREATE"); //Storing in a root-file for later read-in
-    writeData.WriteObject(histogram, "test");
-
-    writeData.Close();
+    //Closes files and removes objects from the heap
     dataFile.Close();
+    delete tpcTrack;
+    delete fmdTrack;
+    
+    /*
+    It would be better to return a pointer to larger object like this histogram and 
+    implement a proper accompanying destructor (RAII), but ROOT or some optimisation (-O3 ?) 
+    seems to be messing this up. The histogram gets destroyed when out of scope of the function 
+    even if I place it on the heap. Since ROOT handles pointers on its own when using its 
+    interpreter, this might be a bug in the standalone version.
+    */
+    return histogram;
 
 
 }
 
 
-TH2D storeInHist::getHist() {
-    return this->storedHistogram;
+
+
+const TH2D storeInHist::getHist() {
+    return this->_storedHistogram;
+}
+
+
+
+
+void storeInHist::storeHistogramInFile() {
+    //Sets the new filename
+    const std::string filename = _pathToFile.substr(_pathToFile.find("/")+1, _pathToFile.length());
+    std::string storageLocation = filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
+
+    //Stores the histogram
+    TH2D* histogramPointer = &(this->_storedHistogram);
+    TFile writeData(storageLocation.c_str(), "RECREATE"); 
+    writeData.WriteObject(histogramPointer, "processedDataHistogram");
+    writeData.Close();
+
 }
