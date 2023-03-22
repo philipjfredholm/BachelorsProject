@@ -16,6 +16,7 @@
 #include <TGraph.h>
 #include <TCanvas.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TClonesArray.h>
 #include <TMath.h>
 
@@ -30,15 +31,15 @@ int main(int argc, char **argv) {
     storeInHist myHistogram {"wipData/sampleData.root"};
 
     //Makes the histogram
-    TApplication app("app", &argc, argv);
+    TRint app("app", &argc, argv);
     TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
 
     //TFile dataFile("histograms.root", "READ"); 
     //TH1D* histogram = (TH1D*)dataFile.Get("test");
     //dataFile.ls();
 
-    TH1D histogram = myHistogram.getHist();
-    histogram.Draw();
+    TH2D histogram = myHistogram.getHist();
+    histogram.Draw("surf1");
     //(void)histogram;
     canvas.Modified(); //Checks if the canvas has been modified in the event loop
     canvas.Update();

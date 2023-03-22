@@ -8,8 +8,9 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     //Opens the file to be read
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
-    Int_t binCount = 20; //Number of bins the interval [0,2pi] is to be divided over
-    TH1D* histogram = new TH1D("histogram", "Counts", binCount, 0, 2*TMath::Pi());
+    Int_t binCount = 15; //Number of bins the interval [0,2pi] is to be divided over
+    TH2D* histogram = new TH2D("histogram", "Counts", binCount, 0, 2*TMath::Pi(), 50, -6, 6);
+
 
     //Creates variables to write the read-in variables to.
     //AliLWEvent* event;
@@ -28,12 +29,16 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     Int_t trackCountFMD;
     Double_t phiValTPC;
     Double_t phiValFMD;
+    Double_t etaValTPC;
+    Double_t etaValFMD;
+    Double_t etaDiff;
     Int_t fmdMult;
     Double_t phiDiff;
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    if (dataCount > 200) {dataCount = 2000;}; //For faster read times when debugging
+
+    //if (dataCount > 200) {dataCount = 200;}; //For faster read times when debugging
 
     //Reads in the data and fills the histogram
     for (Int_t eventNumber = 0; eventNumber < dataCount; eventNumber++) {
@@ -46,13 +51,17 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
             //This loops through each track in a TPC event
             currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]); //tpcTrack->At(m) is the same as (*tpcTrack)[m]
             phiValTPC = currentTrackTPC->fPhi;
+            etaValTPC = currentTrackTPC->fEta;
             
             for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
                 //This loops through each measured angle bin in an FMD event
                 currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
                 fmdMult = currentTrackFMD->fMult;
                 phiValFMD = currentTrackFMD->fPhi;
+                etaValFMD = currentTrackFMD->fEta;
                 phiDiff = phiValTPC - phiValFMD;
+                etaDiff = etaValTPC-etaValFMD;
+     
 
                 //Makes sures all values are positive
                 if (phiDiff < 0) {
@@ -62,13 +71,14 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
                 //This weights the phi-difference by the number of multiplicities in the FMD
                 for (Int_t p = 0; p < fmdMult; p++) {
                     
-                    histogram->Fill(phiDiff);
+                    histogram->Fill(phiDiff, etaDiff);
                 }
             }
         } 
     }
 
     
+
 
 
 
@@ -95,6 +105,6 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
 }
 
 
-TH1D storeInHist::getHist() {
+TH2D storeInHist::getHist() {
     return this->storedHistogram;
 }

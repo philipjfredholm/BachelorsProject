@@ -10,6 +10,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TObject.h>
 #include <TClonesArray.h>
 #include <TMath.h>
@@ -18,7 +19,7 @@
 class storeInHist : TObject {
     private:
         const std::string _pathToFile;
-        TH1D storedHistogram;
+        TH2D storedHistogram;
         //std::string _pathToFiles;
         /*
         const std::string _pathToOutput;
@@ -29,7 +30,7 @@ class storeInHist : TObject {
 
     public:
         storeInHist(std::string pathToFile);
-        TH1D getHist();
+        TH2D getHist();
 
 
 
