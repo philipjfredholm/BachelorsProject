@@ -1,2 +1,7 @@
-# BA
-Bachelor's Project Repository
+# Philip Fredholm's Bachelor's Project
+Markup : * Requirements: 
+            * You must have ROOT installed (tested with v6.26) and have sourced the 'thisroot.sh'-file.
+            
+            * You must have Make installed.
+
+            * You must have at least C++17 available in your compiler.
