@@ -3,12 +3,16 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <future>
+#include <mutex>
+
 
 //Other
 #include "include/storeInHist.h"
 #include "AliLWUtils.h"
 
 //ROOT
+#include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TObject.h>
