@@ -20,7 +20,7 @@ echo "All files have now been processed"
 
 #Combines the histograms into one
 
-./main processedData
+./combine processedData
 
 echo "Finished"
 
