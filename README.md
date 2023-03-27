@@ -1,6 +1,6 @@
 # Philip Fredholm's Bachelor's Project
 * Requirements: 
-    * You must have ROOT installed (tested with v6.26) and have sourced the 'thisroot.sh'-file.
+    * You must have ROOT installed (tested with v6.26/10) and have sourced the 'thisroot.sh'-file.
             
     * You must have Make installed.
 
