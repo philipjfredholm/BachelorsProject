@@ -25,9 +25,24 @@ SOURCES = src/AliLWUtils.cxx src/storeInHist.cxx
 
 
 #Commands
-all: main.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o main main.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+all: combine.cpp readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	make readData
+	make combine
 	make clean1
+
+
+combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	make clean1
+
+
+
+readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o readData readData.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	make clean1
+
+
+
 
 
 AliLWUtils.o: include/AliLWUtils.h src/AliLWUtils.cxx

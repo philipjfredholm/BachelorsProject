@@ -4,18 +4,30 @@ ClassImp(storeInHist);
 
 
 
+storeInHist::storeInHist(Int_t number) {
+    this->_unInitialised = 0;
+    this->_pathToFile = "";
+    (void)number;
+}
+
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
+    TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
+    TH2D* histogram = (TH2D*)dataFile.Get("processedDataHistogram");
+    this->_storedHistogram = *histogram;
+}
+
+
+
+storeInHist::storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, Double_t etaMin, Double_t etaMax) : _pathToFile{pathToFile} {
     //Gets the number of entries in the tree
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
     Int_t dataCount = dataTree->GetEntries();
     dataFile.Close();
-    (void)dataCount;
-
-    Int_t binCountsX = 15;
-    Int_t binCountsY = 50;
-    TH2D histogram = loadHistogram(pathToFile, 0, 200, binCountsX, binCountsY);
+    
+    TH2D histogram = loadHistogram(pathToFile, 0, dataCount, binsPhi, binsEta, etaMin, etaMax);
     this->_storedHistogram = histogram;
+    this->_unInitialised = 1;
     storeHistogramInFile();
 
 
@@ -25,8 +37,8 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
 
 
 
-const TH2D storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t stop, 
-                                Int_t countsX, Int_t countsY) {
+TH2D storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t stop, 
+                                Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax) {
 
     //Opens the data
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
@@ -56,7 +68,7 @@ const TH2D storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t
 
 
     //Reads in the data and fills the histogram
-    TH2D histogram("histogram", "Counts", countsX, 0, 2*TMath::Pi(), countsY, -6, 6);
+    TH2D histogram("histogram", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
 
     //Loops through each event
     for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
@@ -112,17 +124,44 @@ const TH2D storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t
 
 
 
-const TH2D storeInHist::getHist() {
+const TH2D storeInHist::getHistogram() {
     return this->_storedHistogram;
+}
+
+void storeInHist::addHistogram(storeInHist secondHistogram) {
+    if (this->_unInitialised == 0) {
+        this->_storedHistogram = secondHistogram.getHistogram();
+        this->_pathToFile = secondHistogram.getFilePath();
+        this->_unInitialised = 1;
+
+    } else { 
+        TH2D secondHistogramCopy = secondHistogram.getHistogram(); //Making a copy is necessary because g++ complains about references to "r-value"
+        this->_storedHistogram.Add(&secondHistogramCopy);
+
+    }
+
+    
 }
 
 
 
+void storeInHist::setStorageName(std::string location) {
+    this->_pathToFile = location;
+}
+
+std::string storeInHist::getFilePath() {
+    return this->_pathToFile;
+}
+
 
 void storeInHist::storeHistogramInFile() {
     //Sets the new filename
+    if (std::filesystem::exists("./processedData") == false) {
+        std::filesystem::create_directory("./processedData");
+    }
+
     const std::string filename = _pathToFile.substr(_pathToFile.find("/")+1, _pathToFile.length());
-    std::string storageLocation = filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
+    std::string storageLocation = "processedData/"+filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
 
     //Stores the histogram
     TH2D* histogramPointer = &(this->_storedHistogram);
@@ -131,3 +170,4 @@ void storeInHist::storeHistogramInFile() {
     writeData.Close();
 
 }
+

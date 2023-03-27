@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <filesystem>
 
 #include "AliLWUtils.h"
 
@@ -20,22 +21,31 @@
 class storeInHist : TObject {
     private:
         //Member Variablies
-        const std::string _pathToFile;
+        std::string _pathToFile;
+        Int_t _unInitialised;
         TH2D _storedHistogram; //I might define addition for histograms 
                                // later so this is not marked as const
 
         //Member functions
-        const TH2D loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
-                                                 Int_t countsX, Int_t countsY);
+        TH2D loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
+                                                 Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax);
 
-        void storeHistogramInFile();
+        
 
 
     public:
 
         //Member Functions
+        storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, Double_t etaMin, Double_t etaMax);
         storeInHist(std::string pathToFile);
-        const TH2D getHist();
+        //A default constructor is necessary in a later part of the code. However,
+        //ROOT's TObjects interferes with this so I just make one with a number instead.
+        storeInHist(Int_t number);
+        const TH2D getHistogram();
+        void addHistogram(storeInHist secondHistogram);
+        void setStorageName(std::string location);
+        std::string getFilePath();
+        void storeHistogramInFile();
 
 
 
