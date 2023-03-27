@@ -5,13 +5,9 @@
 #include <vector>
 #include <string>
 #include <thread>
-#include <future>
-#include <mutex>
-
 
 #include "AliLWUtils.h"
 
-#include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1D.h>
@@ -29,12 +25,10 @@ class storeInHist : TObject {
                                // later so this is not marked as const
 
         //Member functions
-        void loadHistogram(std::promise<TH2D> myPromise, std::string pathToFile, Int_t start, Int_t stop,
-                                                 Int_t countsX, Int_t countsY, std::string histname);
+        const TH2D loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
+                                                 Int_t countsX, Int_t countsY);
 
         void storeHistogramInFile();
-
-        TTree* getTree(std::string pathToFile);
 
 
     public:
