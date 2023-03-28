@@ -4,6 +4,6 @@
             
     * You must have Make installed.
 
-    * You must have at least C++17 available in your compiler.
+    * You must have at least C++17 available in your compiler (your ROOT-compilation must also be C++17 compatible).
 
 ...
