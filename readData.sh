@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-pids=""
+pids="" #Process id:s so that we can wait for all to finish
 
 rm -rfd processedData
 
@@ -11,7 +11,7 @@ for entry in $1/*.root; do
     pids="$pids $!"
 done
 
-#Makes sure all reading in has been performed
+#Makes sure all reading in has been finished before starting the merging program
 for id in $pids; do
     wait $id
 done

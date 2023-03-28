@@ -22,13 +22,14 @@ class storeInHist : TObject {
     private:
         //Member Variablies
         std::string _pathToFile;
-        Int_t _unInitialised;
-        TH2D _storedHistogram; //I might define addition for histograms 
-                               // later so this is not marked as const
+        Int_t _initialised;
+        TH2D _storedForwardHistogram; 
+        TH2D _storedBackwardHistogram;
+        TH2D _storedBackToBackHistogram;
 
         //Member functions
-        TH2D loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
-                                                 Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax);
+        std::vector<TH2D> loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
+                                                 Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax, Short_t cutOption);
 
         
 
@@ -36,12 +37,14 @@ class storeInHist : TObject {
     public:
 
         //Member Functions
-        storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, Double_t etaMin, Double_t etaMax);
+        storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, Double_t etaMin, Double_t etaMax, Short_t cutOption);
         storeInHist(std::string pathToFile);
         //A default constructor is necessary in a later part of the code. However,
         //ROOT's TObjects interferes with this so I just make one with a number instead.
         storeInHist(Int_t number);
-        const TH2D getHistogram();
+        const TH2D getForwardHistogram();
+        const TH2D getBackwardHistogram();
+        const TH2D getBackToBackHistogram();
         void addHistogram(storeInHist secondHistogram);
         void setStorageName(std::string location);
         std::string getFilePath();

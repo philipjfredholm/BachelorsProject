@@ -34,9 +34,17 @@
 
 
 int main(int argc, char **argv) {
-    //Makes the application
+    int phiBins = 60;
+    int etaBins = 135;
+    double etaMin = -6;
+    double etaMax = 10;
+    Short_t cutOption = 3;
+
     std::string pathToFile = argv[1];
-    storeInHist myHistogram {pathToFile, 15, 20, -6, 6};
+    storeInHist myHistogram {pathToFile, phiBins, etaBins, etaMin, etaMax, cutOption};
+
+
+
     (void)argc;
 
 }

@@ -5,6 +5,7 @@
 #include <thread>
 #include <future>
 #include <mutex>
+#include <filesystem>
 
 
 //Other
@@ -44,12 +45,16 @@ int main(int argc, char **argv) {
 
     //Reads in the histograms
     std::string pathToFile = argv[1];
+    std::string drawOption = argv[2];
 
 
     storeInHist myHistogram(0); //The numbers are random, I needed to change the signature since TObject already does a default constructor.
     for (const auto& file : std::filesystem::directory_iterator(pathToFile)) {
         
-        std::cout << file.path() << std::endl;
+        std::string filename = file.path();
+        if (filename == "totalDataProcessed.root") {
+            continue;
+        }
         storeInHist dummyHistogram (file.path());
         myHistogram.addHistogram(dummyHistogram);
 
@@ -62,17 +67,58 @@ int main(int argc, char **argv) {
     myHistogram.storeHistogramInFile();
 
 
-    //Plots the histogram
-    TH2D histogram = myHistogram.getHistogram();
-    histogram.Draw("surf1");
+    //Plots the histogram if the proper argument has been given
+    if (drawOption == "forward") {
+        TH2D histogramForward = myHistogram.getForwardHistogram();
+        histogramForward.Draw("surf1");
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+
+    }
+
+    if (drawOption == "backward") {
+        TH2D histogramBackward = myHistogram.getBackwardHistogram();
+        histogramBackward.Draw("surf1");
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+    if (drawOption == "backToBack") {
+        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        histogramBackToBack.Draw("surf1");
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+    }
+
+    if (drawOption == "none") {
+
+    }
+
+    if (drawOption == "all") {
+        TH2D histogramForward = myHistogram.getForwardHistogram();
+        TH2D histogramBackward = myHistogram.getBackwardHistogram();
+        histogramForward.Add(&histogramBackward);
+        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        histogramForward.Add(&histogramBackToBack);
+        histogramForward.Draw("surf1");
+
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
 
 
 
-
-    //Runs the application
-    canvas.Modified(); 
-    canvas.Update();
-    app.Run();
 
 
     (void)argc;
