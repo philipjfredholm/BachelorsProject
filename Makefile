@@ -81,9 +81,13 @@ clean1:
 
 #Cleans away the files needed to run the program
 clean2:
+	rm readData
+	rm combine
+	rm dataFitter
 	rm *.pcm
 	rm *.so
 	rm main
+
 
 #Cleans away everything
 clean: 
@@ -93,6 +97,9 @@ clean:
 	rm rootDict.cxx
 	rm *.pcm
 	rm main
+	rm readData
+	rm combine
+	rm dataFitter
 
 
 .PHONY: all clean1 clean2 clean
