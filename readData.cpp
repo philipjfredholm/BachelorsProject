@@ -34,8 +34,8 @@
 
 
 int main(int argc, char **argv) {
-    int phiBins = 60;
-    int etaBins = 135;
+    int phiBins = 12;
+    int etaBins = 70;
     double etaMin = -6;
     double etaMax = 10;
     Short_t cutOption = 3;
