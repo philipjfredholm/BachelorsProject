@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     //Plots the histogram if the proper argument has been given
     if (drawOption == "forward") {
         TH2D histogramForward = myHistogram.getForwardHistogram();
-        histogramForward.Draw("surf1");
+        histogramForward.Draw("colz");
 
         canvas.Modified(); 
         canvas.Update();
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     if (drawOption == "backward") {
         TH2D histogramBackward = myHistogram.getBackwardHistogram();
-        histogramBackward.Draw("surf1");
+        histogramBackward.Draw("colz");
 
         canvas.Modified(); 
         canvas.Update();
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
     if (drawOption == "backToBack") {
         TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
-        histogramBackToBack.Draw("surf1");
+        histogramBackToBack.Draw("colzs");
 
         canvas.Modified(); 
         canvas.Update();

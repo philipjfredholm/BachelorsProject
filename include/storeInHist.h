@@ -23,12 +23,18 @@ class storeInHist : TObject {
         //Member Variablies
         std::string _pathToFile;
         Int_t _initialised;
-        TH2D _storedForwardHistogram; 
+        TH2D _storedForwardHistogram;
+        TH2D _noCorrelationForward; 
         TH2D _storedBackwardHistogram;
+        TH2D _noCorrelationBackward;
         TH2D _storedBackToBackHistogram;
+        TH2D _noCorrelationBackToBack;
 
         //Member functions
         std::vector<TH2D> loadHistogram(std::string pathToFile, Int_t start, Int_t stop,
+                                                 Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax, Short_t cutOption);
+        
+        std::vector<TH2D> loadBackgroundHistogram(std::string pathToFile, Int_t start, Int_t stop,
                                                  Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax, Short_t cutOption);
 
         
