@@ -104,7 +104,11 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
 
 
 //Actual Constructor
-storeInHist::storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, Double_t etaMin, Double_t etaMax, Short_t cutOption) : _pathToFile{pathToFile} {
+storeInHist::storeInHist(std::string pathToFile, Short_t cutOption, 
+                                                    Double_t centralityMin, Double_t centralityMax,
+                                                    Double_t ptMin, Double_t ptMax,
+                                                    Double_t etaMin, Double_t etaMax,
+                                                    Int_t countsPhi, Int_t countsEta) : _pathToFile{pathToFile} {
     //Gets the number of entries in the tree
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
@@ -113,7 +117,12 @@ storeInHist::storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, D
     
 
     //loadHistogram creates the three histograms that are wanted. Separate method as it is very lengthy.
-    std::vector<TH2D> histogramVector = loadHistogram(pathToFile, 0, dataCount, binsPhi, binsEta, etaMin, etaMax, cutOption);
+    std::vector<TH2D> histogramVector = loadHistogram(pathToFile, cutOption,
+                                                      centralityMin, centralityMax,
+                                                      ptMin, ptMax,
+                                                      etaMin, etaMax,
+                                                      countsPhi, countsEta,
+                                                      0, dataCount);
     this->_storedForwardHistogram = histogramVector[0];
     this->_storedBackwardHistogram = histogramVector[1];
     this->_storedBackToBackHistogram = histogramVector[2];
@@ -126,286 +135,76 @@ storeInHist::storeInHist(std::string pathToFile, Int_t binsPhi, Int_t binsEta, D
 
 
 //Helper-method to a constructor to read in the data properly into the correct histograms
-std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Int_t start, Int_t stop, 
-                                Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax, Short_t cutOption) {
-
-    //Opens the data
-    TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
-    TTree* dataTree = (TTree*)dataFile.Get("LWTree");
-    
-
-    //Creates variables to write the read-in variables to.
-    //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
-    TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack");
-    TClonesArray* fmdTrack = new TClonesArray("AliLWFMDTrack");
-    dataTree->SetBranchAddress("TPCTracks", &tpcTrack);
-    dataTree->SetBranchAddress("FMDTracks", &fmdTrack);
-
-
-    //Variables needed in the for-loops for TPC-FMD correlatons
-    Short_t cutFlag;
-    Int_t trackCountTPC;
-    Int_t trackCountFMD;
-    Double_t phiValTPC;
-    Double_t phiValFMD;
-    Double_t etaValTPC;
-    Double_t etaValFMD;
-    Double_t etaDiff;
-    Int_t fmdMult;
-    Double_t phiDiff;
-    AliLWTPCTrack* currentTrackTPC;
-    AliLWFMDTrack* currentTrackFMD;
-
-    //Variables needed for FMD-FMD correlations
-    Double_t phiForwardFMD;
-    Double_t phiBackwardFMD;
-    Double_t etaForwardFMD;
-    Double_t etaBackwardFMD;
-    Int_t forwardMult;
-    Int_t backwardMult;
-
-    Double_t phiDiffBackToBack;
-    Double_t etaDiffBackToBack;
-
-
-    std::vector<Double_t> forwardTracksEta;
-    std::vector<Double_t> backwardTracksEta;
-    std::vector<Double_t> forwardTracksPhi;
-    std::vector<Double_t> backwardTracksPhi;
-    std::vector<Int_t> forwardTracksMult;
-    std::vector<Int_t> backwardTracksMult;
-
+std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cutOption, 
+                                            Double_t centralityMin, Double_t centralityMax,
+                                            Double_t ptMin, Double_t ptMax,
+                                            Double_t etaMin, Double_t etaMax,
+                                            Int_t countsPhi, Int_t countsEta,
+                                            Int_t start, Int_t stop) {
 
     //Creates the histograms which will be filled
-    TH2D histogramForward("histogramForward", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-    TH2D histogramBackward("histogramBackWard", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-    TH2D histogramBackToBack("histogramBackToBack", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-
-    /*
-    Explanation of the nested for-loops:
-    The first loop loops through each event and reads out a TClonesArray (basically an array) with the
-    tracks in both the FMD:s and the TPC. The first nested loop then loops through each FMD event. Here,
-    it does two things. First, it calculates the eta and phi differences between the TPC and FMD
-    and then places it into a histogram for correlations with either the forward or backwards FMD with 
-    the tpc. It also, for each event, reads out all the phi and eta values (as well as the multiplicities).
+    TH2D histogramForward("histogramForward", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    TH2D histogramBackward("histogramBackWard", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    TH2D histogramBackToBack("histogramBackToBack", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
     
-    In the second for loop in the loop for the events, these values are used to take FMD-FMD differences
-    between the forwards and backwards FMD. This is in turn a nested loop since all tracks in the forward
-    FMD need to be correlated with the backwards FMD.
-
-    */
-
-   //Event-loop
-    for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
-        //Reads in the tracks for an event
-        dataTree->GetEntry(eventNumber);
-        trackCountTPC = tpcTrack->GetEntries(); 
-        trackCountFMD = fmdTrack->GetEntries();
-
-        //Clears Data from a previous event
-        forwardTracksEta.clear();
-        backwardTracksEta.clear();
-        forwardTracksPhi.clear();
-        backwardTracksPhi.clear();
-        forwardTracksMult.clear();
-        backwardTracksMult.clear();
-
-            
-        //Loops through all tracks in the FMD
-        for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
-            //Gets details about the track
-            currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
-            fmdMult = currentTrackFMD->fMult;
-            phiValFMD = currentTrackFMD->fPhi;
-            etaValFMD = currentTrackFMD->fEta;
-
-
-            //Cutting away data where the resolution is low
-            if ((etaValFMD < -3.1) || (etaValFMD > -2)) {
-                if ((etaValFMD < 3.8) || (etaValFMD > 4.7)) {
-                    if ((etaValFMD < 2.5) || (etaValFMD > 3.1)) {
-                        continue;
-
-                    }
-                }
-            }
-
-            //Stores values for the forward and backward FMD-tracks.
-            if (etaValFMD >= 0) { 
-                forwardTracksEta.push_back(etaValFMD);
-                forwardTracksPhi.push_back(phiValFMD);
-                forwardTracksMult.push_back(fmdMult);
-                
-            } else { 
-                backwardTracksEta.push_back(etaValFMD);
-                backwardTracksPhi.push_back(phiValFMD);
-                backwardTracksMult.push_back(fmdMult);
-
-            }
-
-            //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
-            for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
-                currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
-                phiValTPC = currentTrackTPC->fPhi;
-                etaValTPC = currentTrackTPC->fEta;
-                cutFlag = currentTrackTPC->fTrFlag;
-                phiDiff = phiValTPC - phiValFMD;
-                etaDiff = etaValTPC - etaValFMD;
-
-
-                //Cutting away data where with the wrong flag(s).
-                if (cutOption == 3) {
-                    //Intentionally does nothing
-                } else {
-                    if (cutFlag != cutOption) {
-                        continue;
-                    }
-                }
-
-
-                //Cutting away data where the resolution is low
-                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
-                    continue;
-                } 
-
-
-                //Makes sures all values are positive (we want all values within one period)
-                if (phiDiff < 0) {phiDiff += 2*TMath::Pi();}
-
-
-                //Fills the correct histogram. The sign determines if it is the forwards or backwards FMD
-                if (etaValFMD > 0) {
-                    histogramForward.Fill(phiDiff, etaDiff, fmdMult);
-
-                } else {
-                    histogramBackward.Fill(phiDiff, etaDiff, fmdMult);
-
-                }
-
-
-            }
-
-
-        }
-
-
-
-
-        //Calculates FMD-FMD correlations
-        for (int forwardTrackNumber = 0; forwardTrackNumber < static_cast<int>(forwardTracksEta.size()); forwardTrackNumber++) {
-            phiForwardFMD = forwardTracksPhi[forwardTrackNumber];
-            etaForwardFMD = forwardTracksEta[forwardTrackNumber];
-            forwardMult = forwardTracksMult[forwardTrackNumber];
-
-            for (int backwardTrackNumber = 0; backwardTrackNumber < static_cast<int>(backwardTracksEta.size()); backwardTrackNumber++) {
-                phiBackwardFMD = backwardTracksPhi[backwardTrackNumber];
-                etaBackwardFMD = backwardTracksEta[backwardTrackNumber];
-                backwardMult = backwardTracksMult[backwardTrackNumber];
-
-                phiDiffBackToBack = phiForwardFMD - phiBackwardFMD;
-                etaDiffBackToBack = etaForwardFMD - etaBackwardFMD;
-
-                histogramBackToBack.Fill(phiDiffBackToBack, etaDiffBackToBack, forwardMult*backwardMult);
-
-            }
-
-        }
-
-
-
-        
-    }
-
-
-    //Closes files and removes objects from the heap
-    dataFile.Close();
-    delete tpcTrack;
-    delete fmdTrack;
     
-
-    //Returns the results
-    std::vector<TH2D> returnVector;
-    returnVector.push_back(histogramForward);
-    returnVector.push_back(histogramBackward);
-    returnVector.push_back(histogramBackToBack);
-
-    return returnVector;
-
-
-}
-
-
-
-std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, Int_t start, Int_t stop,
-                                                Int_t countsX, Int_t countsY, Double_t etaMin, Double_t etaMax, Short_t cutOption) {
-
     //Opens the data
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
+
     
     //Creates variables to write the read-in variables to.
-    //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
-    TClonesArray* event = new TClonesArray("AliLWEvent");
-    TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack");
+    AliLWEvent* event = new AliLWEvent; //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
+    TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack"); 
     TClonesArray* fmdTrack = new TClonesArray("AliLWFMDTrack");
-    dataTree->SetBranchAddress("TPCTracks", &tpcTrack);
-    dataTree->SetBranchAddress("FMDTracks", &fmdTrack);
     dataTree->SetBranchAddress("Event", &event);
+    dataTree->SetBranchAddress("TPCTracks", &tpcTrack);
+    dataTree->SetBranchAddress("FMDTracks", &fmdTrack);
 
 
-    //Variables needed in the for-loops for TPC-FMD correlatons
-    Short_t cutFlag;
+    //Variables for looping
     Int_t trackCountTPC;
     Int_t trackCountFMD;
-    Double_t phiValTPC;
-    Double_t phiValFMD;
-    Double_t etaValTPC;
-    Double_t etaValFMD;
-    Double_t ptValue;
-    Double_t etaDiff;
-    Int_t fmdMult;
-    Double_t phiDiff;
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    //Variables needed for FMD-FMD correlations
-    Double_t phiForwardFMD;
+
+    //Event-variables
+    Double_t centrality;
+
+    //TPC-variables
+    Double_t phiValTPC;
+    Double_t etaValTPC;
+    Short_t cutFlag;
+    Double_t pT; //Tranvsverse momentum
+    
+
+    //FMD-variables
+    Double_t phiValFMD; //For TPC-FMD correlations
+    Double_t etaValFMD;
+    Int_t fmdMultiplicity;
+
+    Double_t phiForwardFMD; //For FMD-FMD correlations
     Double_t phiBackwardFMD;
     Double_t etaForwardFMD;
     Double_t etaBackwardFMD;
     Int_t forwardMult;
     Int_t backwardMult;
-
-    Double_t phiDiffBackToBack;
-    Double_t etaDiffBackToBack;
-
-
-    std::vector<Double_t> forwardTracksEta;
-    std::vector<Double_t> backwardTracksEta;
     std::vector<Double_t> forwardTracksPhi;
     std::vector<Double_t> backwardTracksPhi;
+    std::vector<Double_t> forwardTracksEta;
+    std::vector<Double_t> backwardTracksEta; 
     std::vector<Int_t> forwardTracksMult;
     std::vector<Int_t> backwardTracksMult;
 
-
-    //Creates the histograms which will be filled
-    TH2D histogramForward("histogramForward", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-    TH2D histogramBackward("histogramBackWard", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-    TH2D histogramBackToBack("histogramBackToBack", "Counts", countsX, 0, 2*TMath::Pi(), countsY, etaMin, etaMax);
-
-    /*
-    Explanation of the nested for-loops:
-    The first loop loops through each event and reads out a TClonesArray (basically an array) with the
-    tracks in both the FMD:s and the TPC. The first nested loop then loops through each FMD event. Here,
-    it does two things. First, it calculates the eta and phi differences between the TPC and FMD
-    and then places it into a histogram for correlations with either the forward or backwards FMD with 
-    the tpc. It also, for each event, reads out all the phi and eta values (as well as the multiplicities).
     
-    In the second for loop in the loop for the events, these values are used to take FMD-FMD differences
-    between the forwards and backwards FMD. This is in turn a nested loop since all tracks in the forward
-    FMD need to be correlated with the backwards FMD.
+    //Values to be stored in the histograms
+    Double_t etaDiff; //For TPC-FMD correlations
+    Double_t phiDiff;
 
-    */
+    Double_t phiDiffBackToBack; //For FMD-FMD correlations
+    Double_t etaDiffBackToBack;
+
 
    //Event-loop
     for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
@@ -413,6 +212,14 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
         dataTree->GetEntry(eventNumber);
         trackCountTPC = tpcTrack->GetEntries(); 
         trackCountFMD = fmdTrack->GetEntries();
+
+
+        //Checks if the centrality is within the desired region        
+        centrality = event->fCent;
+        if ((centrality < centralityMin) || (centrality > centralityMax)) {
+            continue;
+        }
+
 
         //Clears Data from a previous event
         forwardTracksEta.clear();
@@ -427,7 +234,7 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
         for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
             //Gets details about the track
             currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
-            fmdMult = currentTrackFMD->fMult;
+            fmdMultiplicity = currentTrackFMD->fMult;
             phiValFMD = currentTrackFMD->fPhi;
             etaValFMD = currentTrackFMD->fEta;
 
@@ -446,12 +253,12 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
             if (etaValFMD >= 0) { 
                 forwardTracksEta.push_back(etaValFMD);
                 forwardTracksPhi.push_back(phiValFMD);
-                forwardTracksMult.push_back(fmdMult);
+                forwardTracksMult.push_back(fmdMultiplicity);
                 
             } else { 
                 backwardTracksEta.push_back(etaValFMD);
                 backwardTracksPhi.push_back(phiValFMD);
-                backwardTracksMult.push_back(fmdMult);
+                backwardTracksMult.push_back(fmdMultiplicity);
 
             }
 
@@ -460,9 +267,8 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
                 currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
                 phiValTPC = currentTrackTPC->fPhi;
                 etaValTPC = currentTrackTPC->fEta;
+                pT = currentTrackTPC->fPt;
                 cutFlag = currentTrackTPC->fTrFlag;
-                ptValue = currentTrackTPC->fPt;
-                (void)ptValue;
                 phiDiff = phiValTPC - phiValFMD;
                 etaDiff = etaValTPC - etaValFMD;
 
@@ -474,6 +280,11 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
                     if (cutFlag != cutOption) {
                         continue;
                     }
+                }
+
+                //Cuts away unwanted pT:s
+                if ((pT < ptMin) || (pT > ptMax)) {
+                    continue;
                 }
 
 
@@ -489,19 +300,20 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
 
                 //Fills the correct histogram. The sign determines if it is the forwards or backwards FMD
                 if (etaValFMD > 0) {
-                    histogramForward.Fill(phiDiff, etaDiff, fmdMult);
+                    histogramForward.Fill(phiDiff, etaDiff, fmdMultiplicity);
 
                 } else {
-                    histogramBackward.Fill(phiDiff, etaDiff, fmdMult);
+                    histogramBackward.Fill(phiDiff, etaDiff, fmdMultiplicity);
 
                 }
 
+            } //TPC-loop end
 
-            }
 
 
-        }
 
+
+        } //FMD-loop end
 
 
 
@@ -520,15 +332,14 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
                 etaDiffBackToBack = etaForwardFMD - etaBackwardFMD;
 
                 histogramBackToBack.Fill(phiDiffBackToBack, etaDiffBackToBack, forwardMult*backwardMult);
-
             }
-
         }
 
 
 
-        
-    }
+
+      
+    } //Event-loop end  
 
 
     //Closes files and removes objects from the heap
@@ -546,16 +357,4 @@ std::vector<TH2D> storeInHist::loadBackgroundHistogram(std::string pathToFile, I
     return returnVector;
 
 
-
-
-
-
-
-
-
-
 }
-
-
-
-
