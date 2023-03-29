@@ -39,9 +39,19 @@ int main(int argc, char **argv) {
     double etaMin = -6;
     double etaMax = 10;
     Short_t cutOption = 3;
+    double centralityStart = 40;
+    double centralityStop = 60;
+    double ptStart = 0.5; //What unit is this?
+    double ptStop = 1;
+
+
 
     std::string pathToFile = argv[1];
-    storeInHist myHistogram {pathToFile, phiBins, etaBins, etaMin, etaMax, cutOption};
+    storeInHist myHistogram {pathToFile, cutOption, 
+                             centralityStart, centralityStop,
+                             ptStart, ptStop,
+                             etaMin, etaMax,
+                             phiBins, etaBins};
 
 
 

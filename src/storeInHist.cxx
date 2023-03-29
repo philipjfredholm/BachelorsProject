@@ -206,7 +206,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     Double_t etaDiffBackToBack;
 
 
-   //Event-loop
+    //Event-loop
     for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
         //Reads in the tracks for an event
         dataTree->GetEntry(eventNumber);
@@ -355,6 +355,310 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     returnVector.push_back(histogramBackToBack);
 
     return returnVector;
+
+
+}
+
+
+
+std::vector<TH2D> storeInHist::loadBackground(std::string pathToFile, Short_t cutOption, 
+                                            Double_t centralityMin, Double_t centralityMax,
+                                            Double_t ptMin, Double_t ptMax,
+                                            Double_t etaMin, Double_t etaMax,
+                                            Int_t countsPhi, Int_t countsEta,
+                                            Int_t start, Int_t stop) {
+
+    //Creates the histograms which will be filled
+    TH2D histogramForward("histogramForward", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    TH2D histogramBackward("histogramBackWard", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    TH2D histogramBackToBack("histogramBackToBack", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    
+    
+    //Opens the data
+    TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
+    TTree* dataTree = (TTree*)dataFile.Get("LWTree");
+
+    
+    //Creates variables to write the read-in variables to.
+    AliLWEvent* event = new AliLWEvent; //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
+    TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack"); 
+    TClonesArray* fmdTrack = new TClonesArray("AliLWFMDTrack");
+    dataTree->SetBranchAddress("Event", &event);
+    dataTree->SetBranchAddress("TPCTracks", &tpcTrack);
+    dataTree->SetBranchAddress("FMDTracks", &fmdTrack);
+
+
+
+    //Variables for looping
+    Int_t trackCountTPC;
+    Int_t trackCountFMD;
+    AliLWTPCTrack* currentTrackTPC;
+    AliLWFMDTrack* currentTrackFMD;
+
+
+    //Event-variables
+    Double_t centrality;
+
+    //TPC-variables
+    Double_t phiValTPC;
+    Double_t etaValTPC;
+    Short_t cutFlag;
+    Double_t pT; //Tranvsverse momentum
+
+    std::vector<Double_t> tracksPhiTPC;
+    std::vector<Double_t> tracksEtaTPC;
+    
+
+    //FMD-variables
+    Double_t phiValFMD; //For TPC-FMD correlations
+    Double_t etaValFMD;
+    Int_t fmdMultiplicity;
+
+    Double_t phiForwardFMD; //For FMD-FMD correlations
+    Double_t phiBackwardFMD;
+    Double_t etaForwardFMD;
+    Double_t etaBackwardFMD;
+    Int_t forwardMult;
+    Int_t backwardMult;
+    std::vector<Double_t> forwardTracksPhi;
+    std::vector<Double_t> backwardTracksPhi;
+    std::vector<Double_t> forwardTracksEta;
+    std::vector<Double_t> backwardTracksEta; 
+    std::vector<Int_t> forwardTracksMult;
+    std::vector<Int_t> backwardTracksMult;
+
+    
+    //Values to be stored in the histograms
+    Double_t etaDiff; //For TPC-FMD correlations
+    Double_t phiDiff;
+
+    Double_t phiDiffBackToBack; //For FMD-FMD correlations
+    Double_t etaDiffBackToBack;
+
+
+    //Storing old events' data
+    std::vector<std::vector<Double_t>> oldPhiTracksTPC;
+    std::vector<std::vector<Double_t>> oldEtaTracksTPC;
+
+    std::vector<std::vector<Double_t>> oldPhiTracksForwardFMD;
+    std::vector<std::vector<Double_t>> oldEtaTracksForwardFMD;
+    std::vector<std::vector<Int_t>> oldMultiplicityTracksForwardFMD;
+
+    std::vector<std::vector<Double_t>> oldPhiTracksBackwardFMD;
+    std::vector<std::vector<Double_t>> oldEtaTracksBackwardFMD;
+    std::vector<std::vector<Int_t>> oldMultiplicityTracksBackwardFMD;
+
+
+     //Loads in the first 5 events satisfying our conditions
+    Int_t startCounter = 0;
+    while (oldPhiTracksTPC.size() < 5) {
+        //Reads in information about the event
+        dataTree->GetEntry(startCounter);
+        trackCountTPC = tpcTrack->GetEntries(); 
+        trackCountFMD = fmdTrack->GetEntries();
+
+
+        //Cuts away unwanted centralities
+        centrality = event->fCent;
+        if ((centrality < centralityMin) || (centrality > centralityMax)) {
+            continue;
+        }
+
+
+        //Clears Data from a previous event
+        forwardTracksEta.clear();
+        backwardTracksEta.clear();
+        forwardTracksPhi.clear();
+        backwardTracksPhi.clear();
+        forwardTracksMult.clear();
+        backwardTracksMult.clear();
+
+
+        //Loops through all tracks in the FMD
+        for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
+            //Gets details about the track
+            currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
+            fmdMultiplicity = currentTrackFMD->fMult;
+            phiValFMD = currentTrackFMD->fPhi;
+            etaValFMD = currentTrackFMD->fEta;
+
+
+            //Cutting away data where the resolution is low
+            if ((etaValFMD < -3.1) || (etaValFMD > -2)) {
+                if ((etaValFMD < 3.8) || (etaValFMD > 4.7)) {
+                    if ((etaValFMD < 2.5) || (etaValFMD > 3.1)) {
+                        continue;
+
+                    }
+                }
+            }
+
+            //Stores values for the forward and backward FMD-tracks.
+            if (etaValFMD >= 0) { 
+                forwardTracksPhi.push_back(phiValFMD);
+                forwardTracksEta.push_back(etaValFMD); 
+                forwardTracksMult.push_back(fmdMultiplicity);
+                
+            } else { 
+                backwardTracksPhi.push_back(phiValFMD);
+                backwardTracksEta.push_back(etaValFMD);
+                backwardTracksMult.push_back(fmdMultiplicity);
+
+            }
+
+            //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
+            for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
+                currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
+                phiValTPC = currentTrackTPC->fPhi;
+                etaValTPC = currentTrackTPC->fEta;
+                pT = currentTrackTPC->fPt;
+                cutFlag = currentTrackTPC->fTrFlag;
+
+
+                //Cutting away data where with the wrong flag(s).
+                if (cutOption == 3) {
+                    //Intentionally does nothing
+                } else {
+                    if (cutFlag != cutOption) {
+                        continue;
+                    }
+                }
+
+                //Cuts away unwanted pT:s
+                if ((pT < ptMin) || (pT > ptMax)) {
+                    continue;
+                }
+
+
+                //Cutting away data where the resolution is low
+                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
+                    continue;
+                } 
+
+                
+                //Stores the read-in and approved values
+                tracksPhiTPC.push_back(phiValTPC);
+                tracksEtaTPC.push_back(etaValTPC);
+
+            } //TPC-loop end
+
+
+        } //FMD-loop end
+
+        oldPhiTracksTPC.push_back(tracksPhiTPC);
+        oldEtaTracksTPC.push_back(tracksEtaTPC);
+
+        oldPhiTracksForwardFMD.push_back(forwardTracksPhi);
+        oldEtaTracksForwardFMD.push_back(forwardTracksEta);
+        oldMultiplicityTracksForwardFMD.push_back(forwardTracksMult);
+
+        oldPhiTracksBackwardFMD.push_back(backwardTracksPhi);
+        oldEtaTracksBackwardFMD.push_back(backwardTracksEta);
+        oldMultiplicityTracksBackwardFMD.push_back(backwardTracksMult);
+
+
+
+        startCounter++;
+    }
+
+
+    
+
+
+
+    for (Int_t eventNumber = startCounter; eventNumber < stop; eventNumber++) {
+        //Reads in information about the event
+        dataTree->GetEntry(startCounter);
+        trackCountTPC = tpcTrack->GetEntries(); 
+        trackCountFMD = fmdTrack->GetEntries();
+
+
+        //Cuts away unwanted centralities
+        centrality = event->fCent;
+        if ((centrality < centralityMin) || (centrality > centralityMax)) {
+            continue;
+        }
+
+
+        //Clears Data from a previous event
+        forwardTracksEta.clear();
+        backwardTracksEta.clear();
+        forwardTracksPhi.clear();
+        backwardTracksPhi.clear();
+        forwardTracksMult.clear();
+        backwardTracksMult.clear();
+
+
+        //Loops through all tracks in the FMD
+        for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
+            //Gets details about the track
+            currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
+            fmdMultiplicity = currentTrackFMD->fMult;
+            phiValFMD = currentTrackFMD->fPhi;
+            etaValFMD = currentTrackFMD->fEta;
+
+
+            //Cutting away data where the resolution is low
+            if ((etaValFMD < -3.1) || (etaValFMD > -2)) {
+                if ((etaValFMD < 3.8) || (etaValFMD > 4.7)) {
+                    if ((etaValFMD < 2.5) || (etaValFMD > 3.1)) {
+                        continue;
+
+                    }
+                }
+            }
+
+            //Stores values for the forward and backward FMD-tracks.
+            if (etaValFMD >= 0) { 
+                forwardTracksPhi.push_back(phiValFMD);
+                forwardTracksEta.push_back(etaValFMD); 
+                forwardTracksMult.push_back(fmdMultiplicity);
+                
+            } else { 
+                backwardTracksPhi.push_back(phiValFMD);
+                backwardTracksEta.push_back(etaValFMD);
+                backwardTracksMult.push_back(fmdMultiplicity);
+
+            }
+
+            //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
+            for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
+                currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
+                phiValTPC = currentTrackTPC->fPhi;
+                etaValTPC = currentTrackTPC->fEta;
+                pT = currentTrackTPC->fPt;
+                cutFlag = currentTrackTPC->fTrFlag;
+
+
+                //Cutting away data where with the wrong flag(s).
+                if (cutOption == 3) {
+                    //Intentionally does nothing
+                } else {
+                    if (cutFlag != cutOption) {
+                        continue;
+                    }
+                }
+
+                //Cuts away unwanted pT:s
+                if ((pT < ptMin) || (pT > ptMax)) {
+                    continue;
+                }
+
+
+                //Cutting away data where the resolution is low
+                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
+                    continue;
+                } 
+
+                
+                //Stores the read-in and approved values
+                tracksPhiTPC.push_back(phiValTPC);
+                tracksEtaTPC.push_back(etaValTPC);
+
+            } //TPC-loop end
+
+
+        } //FMD-loop end
 
 
 }

@@ -40,6 +40,14 @@ class storeInHist : TObject {
                                         Int_t countsPhi, Int_t countsEta,
                                         Int_t start, Int_t stop);
 
+        std::vector<TH2D> loadBackground(std::string pathToFile, Short_t cutOption, 
+                                        Double_t centralityMin, Double_t centralityMax,
+                                        Double_t ptMin, Double_t ptMax,
+                                        Double_t etaMin, Double_t etaMax,
+                                        Int_t countsPhi, Int_t countsEta,
+                                        Int_t start, Int_t stop);
+                                        
+
 
     public:
 
