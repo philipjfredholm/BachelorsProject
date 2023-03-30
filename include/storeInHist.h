@@ -64,10 +64,14 @@ class storeInHist : TObject {
         const TH2D getForwardHistogram();
         const TH2D getBackwardHistogram();
         const TH2D getBackToBackHistogram();
+        const TH2D getForwardBackground();
+        const TH2D getBackwardBackground();
+        const TH2D getBackToBackBackground();
         void addHistogram(storeInHist secondHistogram);
         void setStorageName(std::string location);
         std::string getFilePath();
         void storeHistogramInFile();
+        void storeBackgroundInFile();
 
 
 
