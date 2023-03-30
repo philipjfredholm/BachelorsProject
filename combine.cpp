@@ -117,6 +117,19 @@ int main(int argc, char **argv) {
 
     }
 
+    if (drawOption == "background") {
+        TH2D histogramForward = myHistogram.getForwardBackground();
+
+        histogramForward.Draw("surf1");
+
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+    
+
 
 
 

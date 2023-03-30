@@ -46,6 +46,14 @@ class storeInHist : TObject {
                                         Double_t etaMin, Double_t etaMax,
                                         Int_t countsPhi, Int_t countsEta,
                                         Int_t start, Int_t stop);
+
+        void calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
+                                  const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
+                                  const std::vector<Int_t>& mult1, const std::vector<Int_t>& mult2);
+        
+        void calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
+                                  const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
+                                  const std::vector<Int_t>& mult2);
                                         
 
 
