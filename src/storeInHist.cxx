@@ -305,8 +305,9 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 
     
 
-    this->loadProcessed();
+    
     this->_initialised = 1;
+    this->loadProcessed();
     storeHistogramInFile();
 
 
