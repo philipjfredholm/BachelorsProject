@@ -3,6 +3,7 @@
 pids="" #Process id:s so that we can wait for all to finish
 
 rm -rfd processedData
+mkdir processedData
 
 #Starts the reading in of each file
 for entry in $1/*.root; do

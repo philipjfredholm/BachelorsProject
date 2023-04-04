@@ -139,10 +139,6 @@ void storeInHist::addHistogram(storeInHist secondHistogram) {
 
 void storeInHist::storeHistogramInFile() {
     //Sets the new filename
-    if (std::filesystem::exists("./processedData") == false) {
-        std::filesystem::create_directory("./processedData");
-    }
-
     const std::string filename = _pathToFile.substr(_pathToFile.find("/")+1, _pathToFile.length());
     std::string storageLocation = "processedData/"+filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
 
@@ -203,6 +199,7 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     this->_noCorrelationBackward = *histogramBackwardBackground;
     this->_noCorrelationBackToBack = *histogramBackToBackBackground;
 
+    this->_pathToFile = pathToFile.c_str();
     this->_initialised = 1;
 }
 
@@ -221,7 +218,6 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
     Int_t dataCount = dataTree->GetEntries();
     dataFile.Close();
-    dataCount = 200;
 
     //loadHistogram creates the three histograms that are wanted. Separate method as it is very lengthy.
     std::vector<TH2D> histogramVector = loadHistogram(pathToFile, cutOption,
@@ -354,7 +350,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     while (static_cast<int>(oldPhiTracksTPC.size()) < numberOlderEventsToSave) {
         //Reads in the tracks for an event
         dataTree->GetEntry(startCounter);
-        trackCountTPC = tpcTrack->GetEntries(); 
+        trackCountTPC = tpcTrack->GetEntries(); //Number of tracks in the event
         trackCountFMD = fmdTrack->GetEntries();
 
 
@@ -400,13 +396,13 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
             //Stores values for the forward and backward FMD-tracks.
             if (etaValFMD >= 0) { 
-                forwardTracksEta.push_back(etaValFMD);
                 forwardTracksPhi.push_back(phiValFMD);
+                forwardTracksEta.push_back(etaValFMD);
                 forwardTracksMult.push_back(fmdMultiplicity);
                 
             } else { 
-                backwardTracksEta.push_back(etaValFMD);
                 backwardTracksPhi.push_back(phiValFMD);
+                backwardTracksEta.push_back(etaValFMD);
                 backwardTracksMult.push_back(fmdMultiplicity);
 
             }
@@ -418,6 +414,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
                 etaValTPC = currentTrackTPC->fEta;
                 pT = currentTrackTPC->fPt;
                 cutFlag = currentTrackTPC->fTrFlag;
+                
                 phiDiff = phiValTPC - phiValFMD;
                 etaDiff = etaValTPC - etaValFMD;
 
@@ -464,6 +461,11 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
 
 
+        //Makes sure that all events have not been cut away
+        if ( (tracksPhiTPC.size() == 0) && ((forwardTracksPhi.size() == 0) || (backwardTracksPhi.size() == 0)) ) {
+            startCounter++;
+            continue;
+        }
 
 
         } //FMD-loop end
@@ -508,15 +510,13 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
         startCounter++;
 
-    }
+    } //End of while-loop
 
     
-    std::cout << startCounter << std::endl;
-    std::cout << stop << std::endl;
+
     //Event-loop
     for (Int_t eventNumber = start+startCounter; eventNumber < stop; eventNumber++) {
         //Reads in the tracks for an event
-        std::cout << "3" << std::endl;
         dataTree->GetEntry(eventNumber);
         trackCountTPC = tpcTrack->GetEntries(); 
         trackCountFMD = fmdTrack->GetEntries();
@@ -735,13 +735,8 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
 
 
-        std::cout << "hello" << std::endl;
 
         //Updates the stored old events with the current one and removes the oldest one
-        std::cout << tracksPhiTPC.size() << std::endl;
-        std::cout << tracksEtaTPC.size() << std::endl;
-        std::cout << forwardTracksPhi.size() << std::endl;
-        std::cout << forwardTracksEta.size() << std::endl;
         oldPhiTracksTPC.push_back(tracksPhiTPC);
         oldPhiTracksTPC.erase(oldPhiTracksTPC.begin());
         oldEtaTracksTPC.push_back(tracksEtaTPC);
@@ -767,17 +762,8 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     } //Event-loop end  
 
 
-    //Closes files and removes objects from the heap
-    dataFile.Close();
-    delete event;
-    delete tpcTrack;
-    delete fmdTrack;
-    
 
     //Returns the results
-
-
-
     std::vector<TH2D> returnVector;
     returnVector.push_back(histogramForward);
     returnVector.push_back(histogramBackward);
@@ -785,6 +771,11 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     returnVector.push_back(backgroundForward);
     returnVector.push_back(backgroundBackward);
     returnVector.push_back(backgroundBackToBack);
+
+    dataFile.Close();
+    delete event;
+    delete tpcTrack;
+    delete fmdTrack;
 
 
     return returnVector;

@@ -26,11 +26,7 @@
 #include <TH2D.h>
 #include <TClonesArray.h>
 #include <TMath.h>
-
-
-
-
-
+ 
 
 
 int main(int argc, char **argv) {
@@ -105,8 +101,44 @@ int main(int argc, char **argv) {
     if (drawOption == "all") {
         TH2D histogramForward = myHistogram.getForwardHistogram();
         TH2D histogramBackward = myHistogram.getBackwardHistogram();
-        histogramForward.Add(&histogramBackward);
         TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        
+        
+        histogramForward.Add(&histogramBackward);
+        histogramForward.Add(&histogramBackToBack);
+        histogramForward.Draw("surf1");
+
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+    if (drawOption == "normalised") {
+        TH2D histogramForward = myHistogram.getForwardHistogram();
+        TH2D histogramBackward = myHistogram.getBackwardHistogram();
+        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+
+        TH2D histogramForwardBackground = myHistogram.getForwardBackground();
+        TH2D histogramBackwardBackground = myHistogram.getBackwardBackground();
+        TH2D histogramBackToBackBackground = myHistogram.getBackToBackBackground();
+        
+        Double_t maxvalForward = histogramForwardBackground.GetMaximum();
+        Double_t maxvalBackward = histogramBackwardBackground.GetMaximum();
+        Double_t maxvalBackToBack = histogramBackToBackBackground.GetMaximum();
+        
+        
+        TH2D normalisedForwardBackground = (1/maxvalForward)*histogramForwardBackground;
+        TH2D normalisedBackwardBackground = (1/maxvalBackward)*histogramBackwardBackground;
+        TH2D normalisedBackToBackBackground = (1/maxvalBackToBack)*histogramBackToBackBackground;
+
+        histogramForward.Divide(&normalisedForwardBackground);
+        histogramBackward.Divide(&normalisedBackwardBackground);
+        histogramBackToBack.Divide(&normalisedBackToBackBackground);
+
+    
+        histogramForward.Add(&histogramBackward);
         histogramForward.Add(&histogramBackToBack);
         histogramForward.Draw("surf1");
 
@@ -118,10 +150,22 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "background") {
-        TH2D histogramForward = myHistogram.getForwardBackground();
+        //TH2D histogramForward = myHistogram.getForwardBackground();
+        //TH2D histogramBackward = myHistogram.getBackwardBackground();
+        TH2D histogramBackToBack = myHistogram.getBackwardHistogram();
+        TH2D histogramBackToBackBackground = myHistogram.getBackwardBackground();
+        TH2D normalisedBackground;
 
-        histogramForward.Draw("surf1");
+        double maxval = histogramBackToBack.GetMaximum();
+        std::cout << maxval << std::endl;
+        normalisedBackground = (1/maxval)* histogramBackToBackBackground;
 
+        histogramBackToBack.Divide(&normalisedBackground);
+        //histogramForward.Add(&histogramBackward);
+        //histogramForward.Add(&histogramBackToBack);
+
+        //histogramForward.Draw("surf1");
+        histogramBackToBackBackground.Draw("surf1");
 
         canvas.Modified(); 
         canvas.Update();
