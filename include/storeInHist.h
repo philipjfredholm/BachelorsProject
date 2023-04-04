@@ -6,7 +6,6 @@
 #include <string>
 #include <thread>
 
-
 #include "AliLWUtils.h"
 
 #include <TFile.h>
@@ -32,6 +31,11 @@ class storeInHist : TObject {
         TH2D _noCorrelationBackward;
         TH2D _noCorrelationBackToBack;
 
+        TH2D _processedForward;
+        TH2D _processedBackward;
+        TH2D _processedBackToBack;
+
+
         //Member functions
         std::vector<TH2D> loadHistogram(std::string pathToFile, Short_t cutOption, 
                                         Double_t centralityMin, Double_t centralityMax,
@@ -47,6 +51,8 @@ class storeInHist : TObject {
                                         Int_t countsPhi, Int_t countsEta,
                                         Int_t start, Int_t stop);
 
+        void loadProcessed();
+        
         void calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
                                   const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
                                   const std::vector<Int_t>& mult1, const std::vector<Int_t>& mult2);
@@ -69,12 +75,19 @@ class storeInHist : TObject {
         //A default constructor is necessary in a later part of the code. However,
         //ROOT's TObjects interferes with this so I just make one with a number instead.
         storeInHist(Int_t number);
+
         const TH2D getForwardHistogram();
         const TH2D getBackwardHistogram();
         const TH2D getBackToBackHistogram();
+
         const TH2D getForwardBackground();
         const TH2D getBackwardBackground();
         const TH2D getBackToBackBackground();
+
+        const TH2D getForwardProcessed();
+        const TH2D getBackwardProcessed();
+        const TH2D getBackToBackProcessed();
+
         void addHistogram(storeInHist secondHistogram);
         void setStorageName(std::string location);
         std::string getFilePath();

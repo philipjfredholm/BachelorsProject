@@ -41,9 +41,21 @@ const TH2D storeInHist::getBackToBackBackground() {
 }
 
 
+const TH2D storeInHist::getForwardProcessed() {
+    return _processedForward;
+}
+
+const TH2D storeInHist::getBackwardProcessed() {
+    return _processedBackward;
+}
+
+const TH2D storeInHist::getBackToBackProcessed() {
+    return _processedBackToBack;
+}
+
+
+
 //Methods
-
-
 void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
                                   const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
                                   const std::vector<Int_t>& mult1, const std::vector<Int_t>& mult2) {
@@ -151,17 +163,61 @@ void storeInHist::storeHistogramInFile() {
     TH2D* backgroundBackwardPointer = &(this->_noCorrelationBackward);
     TH2D* backgroundBackToBackPointer = &(this->_noCorrelationBackToBack);
 
+    TH2D* processedForwardPointer = &(this->_processedForward);
+    TH2D* processedBackwardPointer = &(this->_processedBackward);
+    TH2D* processedBackToBackPointer = &(this->_processedBackToBack);
+
 
     TFile writeData(storageLocation.c_str(), "RECREATE"); 
-    writeData.WriteObject(histogramForwardPointer, "processedDataForwardHistogram");
-    writeData.WriteObject(histogramBackwardPointer, "processedDataBackwardHistogram");
-    writeData.WriteObject(histogramBackToBackPointer, "processedDataBackToBackHistogram");
 
-    writeData.WriteObject(backgroundForwardPointer, "processedDataForwardHistogramBackground");
-    writeData.WriteObject(backgroundBackwardPointer, "processedDataBackwardHistogramBackground");
-    writeData.WriteObject(backgroundBackToBackPointer, "processedDataBackToBackHistogramBackground");
+    writeData.WriteObject(histogramForwardPointer, "dataForwardHistogram");
+    writeData.WriteObject(histogramBackwardPointer, "dataBackwardHistogram");
+    writeData.WriteObject(histogramBackToBackPointer, "dataBackToBackHistogram");
+
+    writeData.WriteObject(backgroundForwardPointer, "dataForwardHistogramBackground");
+    writeData.WriteObject(backgroundBackwardPointer, "dataBackwardHistogramBackground");
+    writeData.WriteObject(backgroundBackToBackPointer, "dataBackToBackHistogramBackground");
+
+
+    writeData.WriteObject(processedForwardPointer, "dataForwardHistogramProcessed");
+    writeData.WriteObject(processedBackwardPointer, "dataBackwardHistogramProcessed");
+    writeData.WriteObject(processedBackToBackPointer, "dataBackToBackHistogramProcessed");
+
     writeData.Close();
 
+}
+
+void storeInHist::loadProcessed() {
+    if (this->_initialised == 0) {
+        //Just for debugging, if the code was for public use the 
+        //errors should be using std::throw
+        std::cout << "Error: Trying to process unloaded histograms" << std::endl;
+    }
+
+    TH2D histogramForward = this->getForwardHistogram();
+    TH2D histogramBackward = this->getBackwardHistogram();
+    TH2D histogramBackToBack = this->getBackToBackHistogram();
+
+    TH2D histogramForwardBackground = this->getForwardBackground();
+    TH2D histogramBackwardBackground = this->getBackwardBackground();
+    TH2D histogramBackToBackBackground = this->getBackToBackBackground();
+    
+    Double_t maxValueForward = histogramForwardBackground.GetMaximum();
+    Double_t maxValueBackward = histogramBackwardBackground.GetMaximum();
+    Double_t maxValueBackToBack = histogramBackToBackBackground.GetMaximum();
+    
+    // *= syntax does not seem to be implemented for TH2D
+    TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground;
+    TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground;
+    TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground;
+
+    histogramForward.Divide(&normalisedForwardBackground);
+    histogramBackward.Divide(&normalisedBackwardBackground);
+    histogramBackToBack.Divide(&normalisedBackToBackBackground);
+
+    this->_processedForward = histogramForward;
+    this->_processedBackward = histogramBackward;
+    this->_processedBackToBack = histogramBackToBack;
 }
 
 
@@ -183,13 +239,17 @@ storeInHist::storeInHist(Int_t number) {
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
 
-    TH2D* histogramForward = (TH2D*)dataFile.Get("processedDataForwardHistogram");
-    TH2D* histogramBackward = (TH2D*)dataFile.Get("processedDataBackwardHistogram");
-    TH2D* histogramBackToBack = (TH2D*)dataFile.Get("processedDataBackToBackHistogram");
+    TH2D* histogramForward = (TH2D*)dataFile.Get("dataForwardHistogram");
+    TH2D* histogramBackward = (TH2D*)dataFile.Get("dataBackwardHistogram");
+    TH2D* histogramBackToBack = (TH2D*)dataFile.Get("dataBackToBackHistogram");
     
-    TH2D* histogramForwardBackground = (TH2D*)dataFile.Get("processedDataForwardHistogramBackground");
-    TH2D* histogramBackwardBackground = (TH2D*)dataFile.Get("processedDataBackwardHistogramBackground");
-    TH2D* histogramBackToBackBackground = (TH2D*)dataFile.Get("processedDataBackToBackHistogramBackground");
+    TH2D* histogramForwardBackground = (TH2D*)dataFile.Get("dataForwardHistogramBackground");
+    TH2D* histogramBackwardBackground = (TH2D*)dataFile.Get("dataBackwardHistogramBackground");
+    TH2D* histogramBackToBackBackground = (TH2D*)dataFile.Get("dataBackToBackHistogramBackground");
+    
+    TH2D* histogramForwardProcessed = (TH2D*)dataFile.Get("dataForwardHistogramProcessed");
+    TH2D* histogramBackwardProcessed = (TH2D*)dataFile.Get("dataBackwardHistogramProcessed");
+    TH2D* histogramBackToBackProcessed = (TH2D*)dataFile.Get("dataBackToBackHistogramProcessed");
 
     this->_storedForwardHistogram = *histogramForward;
     this->_storedBackwardHistogram = *histogramBackward;
@@ -199,8 +259,15 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     this->_noCorrelationBackward = *histogramBackwardBackground;
     this->_noCorrelationBackToBack = *histogramBackToBackBackground;
 
+    this->_processedForward = *histogramForwardProcessed;
+    this->_processedBackward = *histogramBackwardProcessed;
+    this->_processedBackToBack = *histogramBackToBackProcessed;
+
     this->_pathToFile = pathToFile.c_str();
     this->_initialised = 1;
+    dataFile.Close();
+
+    
 }
 
 
@@ -238,7 +305,7 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 
     
 
-
+    this->loadProcessed();
     this->_initialised = 1;
     storeHistogramInFile();
 
