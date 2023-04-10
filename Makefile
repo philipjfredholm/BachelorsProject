@@ -44,7 +44,14 @@ readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	clean1
 	
 
+bias: bias.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias bias.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+	
 
+biasGeneral: biasGeneral.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o biasGeneral biasGeneral.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
 
 
 
