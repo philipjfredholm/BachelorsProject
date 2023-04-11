@@ -54,6 +54,11 @@ biasGeneral: biasGeneral.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs
 	clean1
 
 
+bias2: bias2.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias2 bias2.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+
+
 
 AliLWUtils.o: include/AliLWUtils.h src/AliLWUtils.cxx
 	$(RUN) -c include/AliLWUtils.h src/AliLWUtils.cxx  $(ROOT)

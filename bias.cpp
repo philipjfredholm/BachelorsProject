@@ -62,9 +62,11 @@ int main(int argc, char** argv) {
 
     //Note that these values must be picked such taht
     // v=w for this demo to work.
-    int N = 30;
-    int M = 30;  
-    int P = N+M-1;
+    int N = 10;
+    int M = 10; 
+    int P = N+M-1; 
+
+    //int P = N+M-1;
     double a = 2;
     double b = 5;
     double c = 7;
@@ -81,7 +83,7 @@ int main(int argc, char** argv) {
 
     TH1D histogram1("histogram1", "Counts", N, a, b);
     TH1D histogram2("histogram2", "Counts", M, c, d);
-    TH1D histogram3("histogram3", "Counts", P+2, std::abs(bPrime-cPrime)-0.5*v, std::abs(aPrime-dPrime)+0.5*v);
+    TH1D histogram3("histogram3", "Counts", P, std::abs(bPrime-cPrime)-0.5*v, std::abs(aPrime-dPrime)+0.5*v);
 
     for (int n = 1; n <= N; n++) {
         histogram1.AddBinContent(n);
