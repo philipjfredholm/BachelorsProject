@@ -34,17 +34,21 @@ int main(int argc, char **argv) {
     char myChar = 'a'; //ROOT requires argv but I do not want to give it.
     char* myCharPtr = &myChar;
     
-    TApplication app("app", 0, &myCharPtr);
+    TRint app("app", 0, &myCharPtr);
     TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
-
 
 
     //Reads in the histograms
     std::string pathToFile = argv[1];
     std::string drawOption = argv[2];
+    std::string drawStyle = argv[3];
+
+    if (drawStyle == "") {
+        drawStyle = "surf1";
+    }
 
 
-    storeInHist myHistogram(0); //The numbers are random, I needed to change the signature since TObject already does a default constructor.
+    storeInHist myHistogram(0); //The number '0' is random, I needed to change the signature since TObject already does a default constructor and I need another one here.
     for (const auto& file : std::filesystem::directory_iterator(pathToFile)) {
         
         std::string filename = file.path();
@@ -66,7 +70,18 @@ int main(int argc, char **argv) {
     //Plots the histogram if the proper argument has been given
     if (drawOption == "forward") {
         TH2D histogramForward = myHistogram.getForwardHistogram();
-        histogramForward.Draw("colz");
+        histogramForward.Draw(drawStyle.c_str());
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+
+    }
+
+    if (drawOption == "forwardBackground") {
+        TH2D histogramForward = myHistogram.getForwardBackground();
+        histogramForward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
         canvas.Update();
@@ -77,25 +92,54 @@ int main(int argc, char **argv) {
 
     if (drawOption == "backward") {
         TH2D histogramBackward = myHistogram.getBackwardHistogram();
-        histogramBackward.Draw("colz");
+        histogramBackward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
         canvas.Update();
         app.Run();
 
     }
+
+    if (drawOption == "backwardBackground") {
+        TH2D histogramBackward = myHistogram.getBackwardBackground();
+        histogramBackward.Draw(drawStyle.c_str());
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+
 
     if (drawOption == "backToBack") {
         TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
-        histogramBackToBack.Draw("colzs");
+        histogramBackToBack.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
         canvas.Update();
         app.Run();
     }
 
-    if (drawOption == "none") {
 
+
+    if (drawOption == "backToBackBackground") {
+        TH2D histogramBackToBack = myHistogram.getBackToBackBackground();
+        histogramBackToBack.Draw(drawStyle.c_str());
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+    }
+
+
+
+
+
+
+
+    if (drawOption == "none") {
+        //Does nothing
     }
 
     if (drawOption == "all") {
@@ -106,7 +150,7 @@ int main(int argc, char **argv) {
         
         histogramForward.Add(&histogramBackward);
         histogramForward.Add(&histogramBackToBack);
-        histogramForward.Draw("surf1");
+        histogramForward.Draw(drawStyle.c_str());
 
 
         canvas.Modified(); 
@@ -115,7 +159,28 @@ int main(int argc, char **argv) {
 
     }
 
-    if (drawOption == "normalised") {
+    if (drawOption == "allBackground") {
+        TH2D histogramForward = myHistogram.getForwardBackground();
+        TH2D histogramBackward = myHistogram.getBackwardBackground();
+        TH2D histogramBackToBack = myHistogram.getBackToBackBackground();
+        
+        
+        histogramForward.Add(&histogramBackward);
+        histogramForward.Add(&histogramBackToBack);
+        histogramForward.Draw(drawStyle.c_str());
+
+
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+
+
+
+
+    if (drawOption == "allNormalised") {
         TH2D histogramForward = myHistogram.getForwardHistogram();
         TH2D histogramBackward = myHistogram.getBackwardHistogram();
         TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
@@ -140,7 +205,7 @@ int main(int argc, char **argv) {
     
         histogramForward.Add(&histogramBackward);
         histogramForward.Add(&histogramBackToBack);
-        histogramForward.Draw("surf1");
+        histogramForward.Draw(drawStyle.c_str());
 
 
         canvas.Modified(); 
@@ -149,24 +214,19 @@ int main(int argc, char **argv) {
 
     }
 
-    if (drawOption == "background") {
-        //TH2D histogramForward = myHistogram.getForwardBackground();
-        //TH2D histogramBackward = myHistogram.getBackwardBackground();
-        TH2D histogramBackToBack = myHistogram.getBackwardHistogram();
-        TH2D histogramBackToBackBackground = myHistogram.getBackwardBackground();
+    if (drawOption == "forwardNormalised") {
+        TH2D histogram = myHistogram.getForwardHistogram();
+        TH2D histogramBackground = myHistogram.getForwardBackground();
         TH2D normalisedBackground;
 
-        double maxval = histogramBackToBack.GetMaximum();
-        std::cout << maxval << std::endl;
-        normalisedBackground = (1/maxval)* histogramBackToBackBackground;
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        
+        histogram.Draw(drawStyle.c_str());
 
-        histogramBackToBack.Divide(&normalisedBackground);
-        //histogramForward.Add(&histogramBackward);
-        //histogramForward.Add(&histogramBackToBack);
-
-        //histogramForward.Draw("surf1");
-        histogramBackToBackBackground.Draw("surf1");
-
+        
         canvas.Modified(); 
         canvas.Update();
         app.Run();
@@ -174,7 +234,45 @@ int main(int argc, char **argv) {
     }
     
 
+    if (drawOption == "backwardNormalised") {
+        TH2D histogram = myHistogram.getBackwardHistogram();
+        TH2D histogramBackground = myHistogram.getBackwardBackground();
+        TH2D normalisedBackground;
 
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        
+        histogram.Draw(drawStyle.c_str());
+
+        
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+    if (drawOption == "backToBackNormalised") {
+        TH2D histogram = myHistogram.getBackToBackHistogram();
+        TH2D histogramBackground = myHistogram.getBackToBackBackground();
+        TH2D normalisedBackground;
+
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        
+        histogram.Draw(drawStyle.c_str());
+
+        
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+    
+    
 
 
 
