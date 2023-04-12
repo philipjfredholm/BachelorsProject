@@ -27,18 +27,13 @@ int main(int argc, char** argv) {
     TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
 
     //Parameters
-    int N = 10; //Bins in first histogram
-    int M = 10; //Bins in second histogram
-    int P = 19 ; //Bins in correlation histogram
-    double a = 2.001; //First histogram lower end
-    double b = 5; //First histogram upper end
-    double c = 7; //Second histogram lower end
-    double d = 10; //Second histogram upper end
-
-    double aPrime = a + 0.5*v; //Centre of the first bin of the first histogram
-    double bPrime = b - 0.5*v; //Centre of the last bin of the first histogram
-    double cPrime = c + 0.5*w; //Centre of the first bin of the second histogram
-    double dPrime = d - 0.5*w; //Centre of the last bin of the second histogram
+    int N = 100; //Bins in first histogram
+    int M = 65; //Bins in second histogram
+    int P = 250 ; //Bins in correlation histogram
+    double a = 0; //First histogram lower end
+    double b = 6.3; //First histogram upper end
+    double c = 0; //Second histogram lower end
+    double d = 6.3; //Second histogram upper end
 
 
     double v = (b-a)/N; //Bin width of the first histogram
@@ -46,11 +41,15 @@ int main(int argc, char** argv) {
     double u = (1.0/P)*( v*(N-1) + w*(M-1) ); //Bin width of the correlation histogram
     
  
+    double aPrime = a + 0.5*v; //Centre of the first bin of the first histogram
+    double bPrime = b - 0.5*v; //Centre of the last bin of the first histogram
+    double cPrime = c + 0.5*w; //Centre of the first bin of the second histogram
+    double dPrime = d - 0.5*w; //Centre of the last bin of the second histogram
 
     //Fills the first and second histogram to one entry per bins
     TH1D histogram1("histogram1", "Counts", N, a, b);
     TH1D histogram2("histogram2", "Counts", M, c, d);
-    TH1D histogram3("histogram3", "Counts", P, std::abs(bPrime-cPrime)-0.5*u, std::abs(aPrime-dPrime)+0.5*u);
+    TH1D histogram3("histogram3", "Counts", P, cPrime-bPrime-0.5*u, std::abs(aPrime-dPrime)+0.5*u);
     
     //Adds 1 to every bin in the histograms
     for (int n = 1; n <= N; n++) {
