@@ -1,13 +1,13 @@
 #!/bin/bash 
 
 pids="" #Process id:s so that we can wait for all to finish
-maxcores=2
+maxcores=4
 corecounter=0
 
 #Makes sure there is a new empty folder
 rm -rfd processedData
 mkdir processedData
-
+mkdir -p  processedData/disk/DataSets_PbPb/TPCFMDTrees/LHC15o/WithFMD/
 
 #Starts the reading in of each file
 for entry in $1*.root; do
