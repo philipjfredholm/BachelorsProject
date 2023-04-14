@@ -36,7 +36,9 @@ combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 	clean1
 	
-
+test: test.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o test test.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
 
 
 readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
@@ -58,7 +60,13 @@ bias2: bias2.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o bias2 bias2.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 	clean1
 
+bias3: bias3.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias3 bias3.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
 
+biasRead: biasRead.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o biasRead biasRead.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
 
 AliLWUtils.o: include/AliLWUtils.h src/AliLWUtils.cxx
 	$(RUN) -c include/AliLWUtils.h src/AliLWUtils.cxx  $(ROOT)
@@ -90,6 +98,7 @@ libROOTlibs.so: rootDict.cxx $(SOURCES)
 #Cleans away garbage created during compilation 
 clean1: 
 	rm *.o
+	rm *.so
 	rm include/*.gch
 	rm rootDict.cxx
 	
@@ -99,6 +108,9 @@ clean2:
 	rm readData
 	rm combine
 	rm dataFitter
+	rm bias
+	rm bias2
+	rm biasGenereal
 	rm *.pcm
 	rm *.so
 	rm main
@@ -106,15 +118,10 @@ clean2:
 
 #Cleans away everything
 clean: 
-	rm *.o
-	rm *.so
-	rm include/*.gch
-	rm rootDict.cxx
-	rm *.pcm
-	rm main
-	rm readData
-	rm combine
-	rm dataFitter
+	clean1
+	clean2
+
+
 
 
 .PHONY: all clean1 clean2 clean

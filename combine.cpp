@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
     if (drawOption == "backToBackBackground") {
         TH2D histogramBackToBack = myHistogram.getBackToBackBackground();
         histogramBackToBack.Draw(drawStyle.c_str());
+        
 
         canvas.Modified(); 
         canvas.Update();
@@ -274,6 +275,70 @@ int main(int argc, char **argv) {
     
     
 
+    if (drawOption == "forwardFinished") {
+        TH2D histogram = myHistogram.getForwardHistogram();
+        TH2D histogramBackground = myHistogram.getForwardBackground();
+        TH2D normalisedBackground;
+
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        TH1D phiProjection = *histogram.ProjectionX();
+        
+        
+        phiProjection.SetTitle("TPC-ForwardFMD");
+        phiProjection.Draw();
+
+        
+        
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+
+    if (drawOption == "backwardFinished") {
+        TH2D histogram = myHistogram.getBackwardHistogram();
+        TH2D histogramBackground = myHistogram.getBackwardBackground();
+        TH2D normalisedBackground;
+
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        TH1D phiProjection = *histogram.ProjectionX();
+        
+        phiProjection.Draw();
+        phiProjection.SetTitle("TPC-BackwardFMD");
+
+        
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
+
+    if (drawOption == "backToBackFinished") {
+        TH2D histogram = myHistogram.getBackToBackHistogram();
+        TH2D histogramBackground = myHistogram.getBackToBackBackground();
+        TH2D normalisedBackground;
+
+        double maxval = histogramBackground.GetMaximum();
+        normalisedBackground = (1/maxval)* histogramBackground;
+        histogram.Divide(&normalisedBackground);
+        
+        TH1D phiProjection = *histogram.ProjectionX();
+        phiProjection.SetTitle("FMD-FMD");
+        phiProjection.Draw();
+
+        
+        canvas.Modified(); 
+        canvas.Update();
+        app.Run();
+
+    }
 
 
     (void)argc;

@@ -136,6 +136,77 @@ void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Doub
 
 }
 
+//FMD-FMD
+void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& phi1, const Double_t& eta1,
+                                  const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
+                                  const Int_t& mult1, const std::vector<Int_t>& mult2) {
+
+
+    if (phi2.size() != eta2.size()) {
+        std::cout << "Unequal Sizes detect" << std::endl;
+
+
+    }
+    
+
+    Double_t phiDiff;
+    Double_t etaDiff;
+    Double_t multiplicity;
+
+
+    for (int detectorTrack = 0; detectorTrack < static_cast<int>(phi2.size()); detectorTrack++) {
+        phiDiff = phi1 - phi2[detectorTrack];
+        
+        if (phiDiff < 0) {
+            phiDiff += 2*TMath::Pi();
+        }
+
+        etaDiff = eta1 - eta2[detectorTrack];
+        multiplicity = mult1 * mult2[detectorTrack];
+        myHistogram.Fill(phiDiff, etaDiff, multiplicity);
+
+
+    }
+
+
+
+}
+
+
+//FMD-TPC
+void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& phi1, const Double_t& eta1,
+                                  const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
+                                  const Int_t& mult1) {
+    if (phi2.size() != eta2.size()) {
+        std::cout << "Unequal Sizes detect" << std::endl;
+
+
+    }
+    
+
+    Double_t phiDiff;
+    Double_t etaDiff;
+    Double_t multiplicity;
+
+
+    for (int detectorTrack = 0; detectorTrack < static_cast<int>(phi2.size()); detectorTrack++) {
+        
+        phiDiff = phi1 - phi2[detectorTrack];
+        if (phiDiff < 0) {
+            phiDiff += 2*TMath::Pi();
+        }
+
+        etaDiff = eta1 - eta2[detectorTrack];
+        multiplicity = mult1;
+        myHistogram.Fill(phiDiff, etaDiff, multiplicity);
+
+
+    }
+
+
+}
+
+
 
 void storeInHist::addHistogram(storeInHist secondHistogram) {
     if (this->_initialised == 0) {
@@ -437,7 +508,9 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     Double_t pT; //Tranvsverse momentum
     
     std::vector<Double_t> tracksPhiTPC;
+    tracksPhiTPC.reserve(200000);
     std::vector<Double_t> tracksEtaTPC;
+    tracksEtaTPC.reserve(120000);
     
 
     //FMD-variables
@@ -447,11 +520,17 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
 
     std::vector<Double_t> forwardTracksPhi;
+    forwardTracksPhi.reserve(600);
     std::vector<Double_t> backwardTracksPhi;
+    backwardTracksPhi.reserve(600);
     std::vector<Double_t> forwardTracksEta;
+    forwardTracksEta.reserve(600);
     std::vector<Double_t> backwardTracksEta; 
+    backwardTracksEta.reserve(600);
     std::vector<Int_t> forwardTracksMult;
+    forwardTracksMult.reserve(600);
     std::vector<Int_t> backwardTracksMult;
+    backwardTracksMult.reserve(600);
 
     
     //Values to be stored in the histograms
@@ -461,15 +540,23 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
     //Storing old events' data
     std::vector<std::vector<Double_t>> oldPhiTracksTPC;
+    oldPhiTracksTPC.reserve(5);
     std::vector<std::vector<Double_t>> oldEtaTracksTPC;
+    oldEtaTracksTPC.reserve(5);
 
-    std::vector<std::vector<Double_t>> oldPhiTracksForwardFMD;
+/*     std::vector<std::vector<Double_t>> oldPhiTracksForwardFMD;
+    oldPhiTracksForwardFMD.reserve(5);
     std::vector<std::vector<Double_t>> oldEtaTracksForwardFMD;
+    oldEtaTracksForwardFMD.reserve(5);
     std::vector<std::vector<Int_t>> oldMultiplicityTracksForwardFMD;
+    oldMultiplicityTracksForwardFMD.reserve(5); */
 
     std::vector<std::vector<Double_t>> oldPhiTracksBackwardFMD;
+    oldPhiTracksBackwardFMD.reserve(5);
     std::vector<std::vector<Double_t>> oldEtaTracksBackwardFMD;
+    oldEtaTracksBackwardFMD.reserve(5);
     std::vector<std::vector<Int_t>> oldMultiplicityTracksBackwardFMD;
+    oldMultiplicityTracksBackwardFMD.reserve(5);
 
 
 
@@ -477,7 +564,6 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     //Loads in the first numberOlderEventsToSave events satisfying our conditions
     Int_t startCounter = 0;
     while (static_cast<int>(oldPhiTracksTPC.size()) < numberOlderEventsToSave) {
-        std::cout << startCounter << std::endl;
         //Reads in the tracks for an event
         dataTree->GetEntry(startCounter);
         trackCountTPC = tpcTrack->GetEntries(); //Number of tracks in the event
@@ -618,9 +704,9 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
         oldPhiTracksTPC.push_back(tracksPhiTPC);
         oldEtaTracksTPC.push_back(tracksEtaTPC);
 
-        oldPhiTracksForwardFMD.push_back(forwardTracksPhi);
+/*         oldPhiTracksForwardFMD.push_back(forwardTracksPhi);
         oldEtaTracksForwardFMD.push_back(forwardTracksEta);
-        oldMultiplicityTracksForwardFMD.push_back(forwardTracksMult);
+        oldMultiplicityTracksForwardFMD.push_back(forwardTracksMult); */
         
         oldPhiTracksBackwardFMD.push_back(backwardTracksPhi);
         oldEtaTracksBackwardFMD.push_back(backwardTracksEta);
@@ -636,7 +722,6 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
     //Event-loop
     for (Int_t eventNumber = start+startCounter; eventNumber < stop; eventNumber++) {
-        std::cout << eventNumber << std::endl;
         //Reads in the tracks for an event
         dataTree->GetEntry(eventNumber);
         trackCountTPC = tpcTrack->GetEntries(); 
@@ -694,6 +779,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
             }
 
+
             approvedTPCTracks = 0;
             //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
             for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
@@ -747,8 +833,40 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
 
 
 
-            approvedForwardFMDTracks++;
+            
 
+            //Event mixing start
+            //FMD-oldTPC correlations
+            if (etaValFMD > 0) {
+                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPC.size()); oldEventNumber++) {
+                    calculateSingleCorrelation(backgroundForward, phiValFMD, etaValFMD,
+                                    oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
+                                    fmdMultiplicity);
+
+                }
+            } else {
+                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPC.size()); oldEventNumber++) {
+                    calculateSingleCorrelation(backgroundBackward, phiValFMD, etaValFMD,
+                                    oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
+                                    fmdMultiplicity); 
+
+                }           
+            }
+
+            //forwardFMD-oldBackwardFMD
+            if (etaValFMD > 0 ) {
+                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksBackwardFMD.size()); oldEventNumber++) {       
+                    calculateSingleCorrelation(backgroundBackToBack, phiValFMD, etaValFMD,
+                                        oldPhiTracksBackwardFMD[oldEventNumber], oldEtaTracksBackwardFMD[oldEventNumber],
+                                        fmdMultiplicity, oldMultiplicityTracksBackwardFMD[oldEventNumber]);
+
+                }                
+            }
+
+            //Event Mixing End
+
+            //Keeping track of how many tracks that are approved for later normalisation
+            approvedForwardFMDTracks++;
         } //FMD-loop end
 
         approvedForwardFMDTracksGlobal += approvedForwardFMDTracks;
@@ -759,54 +877,16 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
                             backwardTracksPhi, backwardTracksEta, 
                             forwardTracksMult, backwardTracksMult);
 
-        //Single event end
-
-
-
-
-        //Event Mixing Starts
-        //TPC-FMD correlations
-        for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPC.size()); oldEventNumber++) {
-            calculateCorrelation(backgroundForward, oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
-                            forwardTracksPhi, forwardTracksEta,
-                            forwardTracksMult);
-
-            calculateCorrelation(backgroundBackward, oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
-                            backwardTracksPhi, backwardTracksEta,
-                            backwardTracksMult);
-
-        }
-
-
-
-        //FMD-FMD for backwards tracks with old forward tracks
-
-
-        for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksForwardFMD.size()); oldEventNumber++) {       
-            calculateCorrelation(backgroundBackToBack, oldPhiTracksForwardFMD[oldEventNumber], oldEtaTracksForwardFMD[oldEventNumber],
-                                backwardTracksPhi, backwardTracksEta,
-                                oldMultiplicityTracksForwardFMD[oldEventNumber], backwardTracksMult);
-
-        }
-
+       
 
 
 
 
         //Updates the stored old events with the current one and removes the oldest one
-        std::cout << "tpc track number" << tracksPhiTPC.size() << std::endl;
-        std::cout << "fmd track number" << forwardTracksPhi.size() << std::endl;
         oldPhiTracksTPC.push_back(tracksPhiTPC);
         oldPhiTracksTPC.erase(oldPhiTracksTPC.begin());
         oldEtaTracksTPC.push_back(tracksEtaTPC);
         oldEtaTracksTPC.erase(oldEtaTracksTPC.begin());
-
-        oldPhiTracksForwardFMD.push_back(forwardTracksPhi);
-        oldPhiTracksForwardFMD.erase(oldPhiTracksForwardFMD.begin());
-        oldEtaTracksForwardFMD.push_back(forwardTracksEta);
-        oldEtaTracksForwardFMD.erase(oldEtaTracksForwardFMD.begin());
-        oldMultiplicityTracksForwardFMD.push_back(forwardTracksMult);
-        oldMultiplicityTracksForwardFMD.erase(oldMultiplicityTracksForwardFMD.begin());
 
         oldPhiTracksBackwardFMD.push_back(backwardTracksPhi);
         oldPhiTracksBackwardFMD.erase(oldPhiTracksBackwardFMD.begin());
@@ -816,7 +896,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
         oldMultiplicityTracksBackwardFMD.erase(oldMultiplicityTracksBackwardFMD.begin());
 
 
-      //Event Mixing End
+     
     } //Event-loop end  
 
 

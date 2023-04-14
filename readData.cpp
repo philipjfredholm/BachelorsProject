@@ -30,7 +30,7 @@
 
 
 int main(int argc, char **argv) {
-    int phiBins = 12;
+    int phiBins = 18;
     int etaBins = 70;
     double etaMin = -6;
     double etaMax = 10;
@@ -39,7 +39,6 @@ int main(int argc, char **argv) {
     double centralityStop = 60;
     double ptStart = 0.5; //What unit is this?
     double ptStop = 1;
-
 
 
     std::string pathToFile = argv[1];
