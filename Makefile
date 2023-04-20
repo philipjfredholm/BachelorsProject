@@ -28,52 +28,31 @@ SOURCES = src/AliLWUtils.cxx src/storeInHist.cxx
 all: combine.cpp readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	make readData
 	make combine
-	clean1
-	
+	make entries
 
+	
 
 combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-	
-test: test.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o test test.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
+	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
+
+
 
 
 readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o readData readData.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-	
 
-bias: bias.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias bias.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-	
-
-biasGeneral: biasGeneral.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o biasGeneral biasGeneral.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
+entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o entries entries.cpp AliLWUtils.o -lROOTlibs $(ROOT) -O3
 
 
-bias2: bias2.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias2 bias2.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
 
-bias3: bias3.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias3 bias3.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-
-biasRead: biasRead.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o biasRead biasRead.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
 
 AliLWUtils.o: include/AliLWUtils.h src/AliLWUtils.cxx
 	$(RUN) -c include/AliLWUtils.h src/AliLWUtils.cxx  $(ROOT)
 
 
-storeInHist.o: include/storeInHist.h src/storeInHist.cxx
-	$(RUN) -c include/storeInHist.h src/storeInHist.cxx $(ROOT)
+storeInHist.o: include/storeInHist.h src/storeInHist.cxx 
+	$(RUN) -c include/storeInHist.h src/storeInHist.cxx  $(ROOT)
 
 
 #I have no idea what -p does, but just included it as the ROOT documentation said to do so.
@@ -120,6 +99,35 @@ clean2:
 clean: 
 	clean1
 	clean2
+
+
+
+
+test: test.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o test test.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+
+bias: bias.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias bias.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+	
+
+biasGeneral: biasGeneral.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o biasGeneral biasGeneral.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+
+
+bias2: bias2.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias2 bias2.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+
+bias3: bias3.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o bias3 bias3.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
+
+biasRead: biasRead.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o biasRead biasRead.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+	clean1
 
 
 

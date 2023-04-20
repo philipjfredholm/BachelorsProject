@@ -5,6 +5,9 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <exception>
+#include <algorithm>
+#include <tuple>
 
 #include "AliLWUtils.h"
 
@@ -24,35 +27,32 @@ class storeInHist : TObject {
         std::string _pathToFile;
         Int_t _initialised;
 
-        TH2D _storedForwardHistogram;
-        TH2D _storedBackwardHistogram;
-        TH2D _storedBackToBackHistogram;
+        std::vector<std::vector<TH2D>> _storedForwardList;
+        std::vector<std::vector<TH2D>> _storedBackwardList;
+        std::vector<std::vector<TH2D>> _storedBackToBackList;
         
-        TH2D _noCorrelationForward; 
-        TH2D _noCorrelationBackward;
-        TH2D _noCorrelationBackToBack;
+        std::vector<std::vector<TH2D>> _noCorrelationForwardList;
+        std::vector<std::vector<TH2D>> _noCorrelationBackwardList;
+        std::vector<std::vector<TH2D>> _noCorrelationBackToBackList;
 
-        TH2D _processedForward;
-        TH2D _processedBackward;
-        TH2D _processedBackToBack;
+        std::vector<std::vector<TH2D>> _processedForwardList;
+        std::vector<std::vector<TH2D>> _processedBackwardList;
+        std::vector<std::vector<TH2D>> _processedBackToBackList;
+
+        std::vector<std::vector<int>> _eventNumberList; 
+        std::vector<std::vector<int>> _eventNumberListFMD; 
 
 
         //Member functions
-        std::vector<TH2D> loadHistogram(std::string pathToFile, Short_t cutOption, 
+        std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector<int>>, std::vector<std::vector<int>> > loadHistograms(std::string pathToFile, Short_t cutOption, 
                                         Double_t centralityMin, Double_t centralityMax,
                                         Double_t ptMin, Double_t ptMax,
                                         Double_t etaMin, Double_t etaMax,
                                         Int_t countsPhi, Int_t countsEta,
                                         Int_t start, Int_t stop);
 
-        std::vector<TH2D> loadBackground(std::string pathToFile, Short_t cutOption, 
-                                        Double_t centralityMin, Double_t centralityMax,
-                                        Double_t ptMin, Double_t ptMax,
-                                        Double_t etaMin, Double_t etaMax,
-                                        Int_t countsPhi, Int_t countsEta,
-                                        Int_t start, Int_t stop);
 
-        void loadProcessed();
+        
         
         //FMD-FMD
         void calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
@@ -84,29 +84,34 @@ class storeInHist : TObject {
                                         Double_t centralityMin, Double_t centralityMax,
                                         Double_t ptMin, Double_t ptMax,
                                         Double_t etaMin, Double_t etaMax,
-                                        Int_t countsPhi, Int_t countsEta);
+                                        Int_t countsPhi, Int_t countsEta,
+                                        Int_t start, Int_t stop);
         storeInHist(std::string pathToFile);
+
         //A default constructor is necessary in a later part of the code. However,
         //ROOT's TObjects interferes with this so I just make one with a number instead.
         storeInHist(Int_t number);
 
-        const TH2D getForwardHistogram();
-        const TH2D getBackwardHistogram();
-        const TH2D getBackToBackHistogram();
+        const std::vector<std::vector<TH2D>> getForwardHistograms();
+        const std::vector<std::vector<TH2D>> getBackwardHistograms();
+        const std::vector<std::vector<TH2D>> getBackToBackHistograms();
 
-        const TH2D getForwardBackground();
-        const TH2D getBackwardBackground();
-        const TH2D getBackToBackBackground();
+        const std::vector<std::vector<TH2D>> getForwardBackgrounds();
+        const std::vector<std::vector<TH2D>> getBackwardBackgrounds();
+        const std::vector<std::vector<TH2D>> getBackToBackBackgrounds();
 
-        const TH2D getForwardProcessed();
-        const TH2D getBackwardProcessed();
-        const TH2D getBackToBackProcessed();
+        const std::vector<std::vector<TH2D>> getForwardProcessed();
+        const std::vector<std::vector<TH2D>> getBackwardProcessed();
+        const std::vector<std::vector<TH2D>> getBackToBackProcessed();
 
-        void addHistogram(storeInHist secondHistogram);
+        const std::vector<std::vector<int>> getEventNumberList();
+        const std::vector<std::vector<int>> getEventNumberListFMD();
+
+        void addHistograms(storeInHist secondHistogram);
         void setStorageName(std::string location);
         std::string getFilePath();
         void storeHistogramInFile();
-        void storeBackgroundInFile();
+        void loadProcessed();
 
 
 

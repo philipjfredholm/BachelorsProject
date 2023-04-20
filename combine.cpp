@@ -3,10 +3,7 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <future>
-#include <mutex>
 #include <filesystem>
-
 
 //Other
 #include "include/storeInHist.h"
@@ -42,6 +39,11 @@ int main(int argc, char **argv) {
     std::string pathToFile = argv[1];
     std::string drawOption = argv[2];
     std::string drawStyle = argv[3];
+    std::string ptRegionString = argv[4];
+    int ptRegion= std::stoi(ptRegionString);
+    std::string centralityRegionString = argv[5]; 
+    int centralityRegion = std::stoi(centralityRegionString);
+    
 
     if (drawStyle == "") {
         drawStyle = "surf1";
@@ -50,13 +52,12 @@ int main(int argc, char **argv) {
 
     storeInHist myHistogram(0); //The number '0' is random, I needed to change the signature since TObject already does a default constructor and I need another one here.
     for (const auto& file : std::filesystem::directory_iterator(pathToFile)) {
-        
         std::string filename = file.path();
         if (filename == "totalDataProcessed.root") {
             continue;
         }
         storeInHist dummyHistogram (file.path());
-        myHistogram.addHistogram(dummyHistogram);
+        myHistogram.addHistograms(dummyHistogram);
 
 
     } 
@@ -69,7 +70,8 @@ int main(int argc, char **argv) {
 
     //Plots the histogram if the proper argument has been given
     if (drawOption == "forward") {
-        TH2D histogramForward = myHistogram.getForwardHistogram();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardHistograms();
+        TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         histogramForward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
@@ -80,7 +82,8 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "forwardBackground") {
-        TH2D histogramForward = myHistogram.getForwardBackground();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardBackgrounds();
+        TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         histogramForward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
@@ -91,7 +94,8 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backward") {
-        TH2D histogramBackward = myHistogram.getBackwardHistogram();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardHistograms();
+        TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
         histogramBackward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
@@ -101,7 +105,8 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backwardBackground") {
-        TH2D histogramBackward = myHistogram.getBackwardBackground();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardBackgrounds();
+        TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
         histogramBackward.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
@@ -113,7 +118,8 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "backToBack") {
-        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackHistograms();
+        TH2D histogramBackToBack = histogramBackToBackvector[ptRegion][centralityRegion];
         histogramBackToBack.Draw(drawStyle.c_str());
 
         canvas.Modified(); 
@@ -124,7 +130,8 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "backToBackBackground") {
-        TH2D histogramBackToBack = myHistogram.getBackToBackBackground();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackBackgrounds();
+        TH2D histogramBackToBack = histogramBackToBackvector[ptRegion][centralityRegion];
         histogramBackToBack.Draw(drawStyle.c_str());
         
 
@@ -144,13 +151,17 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "all") {
-        TH2D histogramForward = myHistogram.getForwardHistogram();
-        TH2D histogramBackward = myHistogram.getBackwardHistogram();
-        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardHistograms();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardHistograms();
+        //std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackHistograms();
+
+        TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
+        TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
+        //TH2D histogramBackToBack = histogramBackToBackvector[0][centralityRegion];
         
         
         histogramForward.Add(&histogramBackward);
-        histogramForward.Add(&histogramBackToBack);
+        //histogramForward.Add(&histogramBackToBack);
         histogramForward.Draw(drawStyle.c_str());
 
 
@@ -161,9 +172,13 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "allBackground") {
-        TH2D histogramForward = myHistogram.getForwardBackground();
-        TH2D histogramBackward = myHistogram.getBackwardBackground();
-        TH2D histogramBackToBack = myHistogram.getBackToBackBackground();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackBackgrounds();
+        
+        TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
+        TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
+        TH2D histogramBackToBack = histogramBackToBackvector[0][centralityRegion];
         
         
         histogramForward.Add(&histogramBackward);
@@ -182,28 +197,15 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "allNormalised") {
-        TH2D histogramForward = myHistogram.getForwardHistogram();
-        TH2D histogramBackward = myHistogram.getBackwardHistogram();
-        TH2D histogramBackToBack = myHistogram.getBackToBackHistogram();
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardProcessed();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardProcessed();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackProcessed();
 
-        TH2D histogramForwardBackground = myHistogram.getForwardBackground();
-        TH2D histogramBackwardBackground = myHistogram.getBackwardBackground();
-        TH2D histogramBackToBackBackground = myHistogram.getBackToBackBackground();
-        
-        Double_t maxvalForward = histogramForwardBackground.GetMaximum();
-        Double_t maxvalBackward = histogramBackwardBackground.GetMaximum();
-        Double_t maxvalBackToBack = histogramBackToBackBackground.GetMaximum();
-        
-        
-        TH2D normalisedForwardBackground = (1/maxvalForward)*histogramForwardBackground;
-        TH2D normalisedBackwardBackground = (1/maxvalBackward)*histogramBackwardBackground;
-        TH2D normalisedBackToBackBackground = (1/maxvalBackToBack)*histogramBackToBackBackground;
+        TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
+        TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
+        TH2D histogramBackToBack = histogramBackToBackvector[0][centralityRegion];
 
-        histogramForward.Divide(&normalisedForwardBackground);
-        histogramBackward.Divide(&normalisedBackwardBackground);
-        histogramBackToBack.Divide(&normalisedBackToBackBackground);
-
-    
         histogramForward.Add(&histogramBackward);
         histogramForward.Add(&histogramBackToBack);
         histogramForward.Draw(drawStyle.c_str());
@@ -216,13 +218,9 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "forwardNormalised") {
-        TH2D histogram = myHistogram.getForwardHistogram();
-        TH2D histogramBackground = myHistogram.getForwardBackground();
-        TH2D normalisedBackground;
-
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getForwardProcessed();
+        TH2D histogram = histogramvector[ptRegion][centralityRegion];
         
         
         histogram.Draw(drawStyle.c_str());
@@ -236,14 +234,9 @@ int main(int argc, char **argv) {
     
 
     if (drawOption == "backwardNormalised") {
-        TH2D histogram = myHistogram.getBackwardHistogram();
-        TH2D histogramBackground = myHistogram.getBackwardBackground();
-        TH2D normalisedBackground;
-
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
-        
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackwardProcessed();
+        TH2D histogram = histogramvector[ptRegion][centralityRegion];
         
         histogram.Draw(drawStyle.c_str());
 
@@ -255,14 +248,10 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backToBackNormalised") {
-        TH2D histogram = myHistogram.getBackToBackHistogram();
-        TH2D histogramBackground = myHistogram.getBackToBackBackground();
-        TH2D normalisedBackground;
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackToBackProcessed();
+        TH2D histogram = histogramvector[0][centralityRegion];
 
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
-        
         
         histogram.Draw(drawStyle.c_str());
 
@@ -276,14 +265,10 @@ int main(int argc, char **argv) {
     
 
     if (drawOption == "forwardFinished") {
-        TH2D histogram = myHistogram.getForwardHistogram();
-        TH2D histogramBackground = myHistogram.getForwardBackground();
-        TH2D normalisedBackground;
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getForwardProcessed();
+        TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
-        
         TH1D phiProjection = *histogram.ProjectionX();
         
         
@@ -300,16 +285,11 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "backwardFinished") {
-        TH2D histogram = myHistogram.getBackwardHistogram();
-        TH2D histogramBackground = myHistogram.getBackwardBackground();
-        TH2D normalisedBackground;
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackwardProcessed();
+        TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
-        
         TH1D phiProjection = *histogram.ProjectionX();
-        
         phiProjection.Draw();
         phiProjection.SetTitle("TPC-BackwardFMD");
 
@@ -321,14 +301,10 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backToBackFinished") {
-        TH2D histogram = myHistogram.getBackToBackHistogram();
-        TH2D histogramBackground = myHistogram.getBackToBackBackground();
-        TH2D normalisedBackground;
+        myHistogram.loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackToBackProcessed();
+        TH2D histogram = histogramvector[0][centralityRegion];
 
-        double maxval = histogramBackground.GetMaximum();
-        normalisedBackground = (1/maxval)* histogramBackground;
-        histogram.Divide(&normalisedBackground);
-        
         TH1D phiProjection = *histogram.ProjectionX();
         phiProjection.SetTitle("FMD-FMD");
         phiProjection.Draw();

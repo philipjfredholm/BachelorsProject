@@ -12,42 +12,49 @@ std::string storeInHist::getFilePath() {
     return this->_pathToFile;
 }
 
-const TH2D storeInHist::getForwardHistogram() {
-    return this->_storedForwardHistogram;
+const std::vector<std::vector<TH2D>> storeInHist::getForwardHistograms() {
+    return this->_storedForwardList;
 }
 
-const TH2D storeInHist::getBackwardHistogram() {
-    return this->_storedBackwardHistogram;
+const std::vector<std::vector<TH2D>> storeInHist::getBackwardHistograms() {
+    return this->_storedBackwardList;
 }
 
-const TH2D storeInHist::getBackToBackHistogram() {
-    return this->_storedBackToBackHistogram;
+const std::vector<std::vector<TH2D>> storeInHist::getBackToBackHistograms() {
+    return this->_storedBackToBackList;
 }
 
-const TH2D storeInHist::getForwardBackground() {
-    return this->_noCorrelationForward;
+const std::vector<std::vector<TH2D>> storeInHist::getForwardBackgrounds() {
+    return this->_noCorrelationForwardList;
 }
 
-const TH2D storeInHist::getBackwardBackground() {
-    return this->_noCorrelationBackward;
+const std::vector<std::vector<TH2D>> storeInHist::getBackwardBackgrounds() {
+    return this->_noCorrelationBackwardList;
 }
 
-const TH2D storeInHist::getBackToBackBackground() {
-    return this->_noCorrelationBackToBack;
+const std::vector<std::vector<TH2D>> storeInHist::getBackToBackBackgrounds() {
+    return this->_noCorrelationBackToBackList;
 }
 
-const TH2D storeInHist::getForwardProcessed() {
-    return this->_processedForward;
+const std::vector<std::vector<TH2D>> storeInHist::getForwardProcessed() {
+    return this->_processedForwardList;
 }
 
-const TH2D storeInHist::getBackwardProcessed() {
-    return this->_processedBackward;
+const std::vector<std::vector<TH2D>> storeInHist::getBackwardProcessed() {
+    return this->_processedBackwardList;
 }
 
-const TH2D storeInHist::getBackToBackProcessed() {
-    return this->_processedBackToBack;
+const std::vector<std::vector<TH2D>> storeInHist::getBackToBackProcessed() {
+    return this->_processedBackToBackList;
 }
 
+const std::vector<std::vector<int>> storeInHist::getEventNumberList() {
+    return this->_eventNumberList;
+}
+
+const std::vector<std::vector<int>> storeInHist::getEventNumberListFMD() {
+    return this->_eventNumberListFMD;
+}
 
 
 //Methods
@@ -78,12 +85,12 @@ void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Doub
     for (int detector1Track = 0; detector1Track < static_cast<int>(phi1.size()); detector1Track++) {
         for (int detector2Track = 0; detector2Track < static_cast<int>(phi2.size()); detector2Track++) {
             
-            phiDiff = phi1[detector1Track] - phi2[detector2Track];
+            phiDiff = phi1[detector1Track] - phi2[detector2Track] - 0.0001; //This is for the FMD-FMD correlation so -0.001 is necessary to avoid binning problems
             if (phiDiff < 0) {
                 phiDiff += 2*TMath::Pi();
             }
 
-            etaDiff = eta1[detector1Track] - eta2[detector2Track];
+            etaDiff = eta1[detector1Track] - eta2[detector2Track] - 0.0001;
             multiplicity = mult1[detector1Track] * mult2[detector2Track];
             myHistogram.Fill(phiDiff, etaDiff, multiplicity);
 
@@ -95,46 +102,9 @@ void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Doub
 
 }
         
-void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
-                                  const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
-                                  const std::vector<Int_t>& mult2) {
 
 
-    //This is just for my own debugging, in a public member function we of course throw errors
-    if (phi1.size() != eta1.size()) {
-        std::cout << "Unequal Sizes detect" << std::endl;
 
-
-    }
-
-    if (phi2.size() != eta2.size()) {
-        std::cout << "Unequal Sizes detect" << std::endl;
-
-
-    }
-
-
-    Double_t phiDiff;
-    Double_t etaDiff;
-
-    for (int detector1Track = 0; detector1Track < static_cast<int>(phi1.size()); detector1Track++) {
-        for (int detector2Track = 0; detector2Track < static_cast<int>(phi2.size()); detector2Track++) {
-            phiDiff = phi1[detector1Track] - phi2[detector2Track];
-            if (phiDiff < 0) {
-                phiDiff += 2*TMath::Pi();
-            }
-
-
-            etaDiff = eta1[detector1Track] - eta2[detector2Track];
-            myHistogram.Fill(phiDiff, etaDiff, mult2[detector2Track]);
-
-            
-        }
-
-    }
-
-
-}
 
 //FMD-FMD
 void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& phi1, const Double_t& eta1,
@@ -155,13 +125,13 @@ void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& 
 
 
     for (int detectorTrack = 0; detectorTrack < static_cast<int>(phi2.size()); detectorTrack++) {
-        phiDiff = phi1 - phi2[detectorTrack];
+        phiDiff = phi1 - phi2[detectorTrack] -0.0001; //-0.0001 Necessary to avoid binning problems in FMD-FMD correlations
         
         if (phiDiff < 0) {
             phiDiff += 2*TMath::Pi();
         }
 
-        etaDiff = eta1 - eta2[detectorTrack];
+        etaDiff = eta1 - eta2[detectorTrack] - 0.0001; //-0.0001 Necessary to avoid binning problems in FMD-FMD correlations
         multiplicity = mult1 * mult2[detectorTrack];
         myHistogram.Fill(phiDiff, etaDiff, multiplicity);
 
@@ -208,24 +178,26 @@ void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& 
 
 
 
-void storeInHist::addHistogram(storeInHist secondHistogram) {
+void storeInHist::addHistograms(storeInHist secondHistogram) {
     if (this->_initialised == 0) {
         //Raw
-        this->_storedForwardHistogram = secondHistogram.getForwardHistogram();
-        this->_storedBackwardHistogram = secondHistogram.getBackwardHistogram();
-        this->_storedBackToBackHistogram = secondHistogram.getBackToBackHistogram();
+        this->_storedForwardList = secondHistogram.getForwardHistograms();
+        this->_storedBackwardList = secondHistogram.getBackwardHistograms();
+        this->_storedBackToBackList = secondHistogram.getBackToBackHistograms();
 
 
         //Background
-        this->_noCorrelationForward = secondHistogram.getForwardBackground();
-        this->_noCorrelationBackward = secondHistogram.getBackwardBackground();
-        this->_noCorrelationBackToBack = secondHistogram.getBackToBackBackground();
+        this->_noCorrelationForwardList = secondHistogram.getForwardBackgrounds();
+        this->_noCorrelationBackwardList = secondHistogram.getBackwardBackgrounds();
+        this->_noCorrelationBackToBackList = secondHistogram.getBackToBackBackgrounds();
 
 
         //Normalised
-        this->_processedForward = secondHistogram.getForwardProcessed();
-        this->_processedBackward = secondHistogram.getBackwardProcessed();
-        this->_processedBackToBack = secondHistogram.getBackToBackProcessed(); 
+        this->_processedForwardList = secondHistogram.getForwardProcessed();
+        this->_processedBackwardList = secondHistogram.getBackwardProcessed();
+        this->_processedBackToBackList = secondHistogram.getBackToBackProcessed(); 
+        this->_eventNumberList = secondHistogram.getEventNumberList();
+        this->_eventNumberListFMD = secondHistogram.getEventNumberListFMD();
 
         //Initialisation
         this->_pathToFile = secondHistogram.getFilePath();
@@ -234,33 +206,70 @@ void storeInHist::addHistogram(storeInHist secondHistogram) {
 
 
     } else { 
-        //Raw
-        TH2D secondForwardHistogramCopy = secondHistogram.getForwardHistogram(); //Making a copy is necessary because g++ complains about references to "r-value" otherwise
-        TH2D secondBackwardHistogramCopy = secondHistogram.getBackwardHistogram();
-        TH2D secondBackToBackHistogramCopy = secondHistogram.getBackToBackHistogram();
         
-        this->_storedForwardHistogram.Add(&secondForwardHistogramCopy);
-        this->_storedBackwardHistogram.Add(&secondBackwardHistogramCopy);
-        this->_storedBackToBackHistogram.Add(&secondBackToBackHistogramCopy);       
+        /*
+        The combination of ROOT and C++ is quite annoying here. ROOT only accepts pointers/addresses for the native
+        .Add() method instead of something nice like passing by reference. Since the compiler complains about
+        'reference to r-value' when I try to directly take the address in shorter syntax, I have to make completely
+         new objects just to use the native .Add() method for the TH2D class.
+        */
+
+        std::vector<std::vector<int>> secondEventNumberList = secondHistogram.getEventNumberList();
+        std::vector<std::vector<int>> secondEventNumberListFMD = secondHistogram.getEventNumberListFMD();
+     
+
+        std::vector<std::vector<TH2D>> secondForwardHistogramCopy = secondHistogram.getForwardHistograms(); 
+        std::vector<std::vector<TH2D>> secondBackwardHistogramCopy = secondHistogram.getBackwardHistograms();
+        std::vector<std::vector<TH2D>> secondBackToBackHistogramCopy = secondHistogram.getBackToBackHistograms();
+
+        std::vector<std::vector<TH2D>> secondForwardBackgroundCopy = secondHistogram.getForwardBackgrounds();
+        std::vector<std::vector<TH2D>> secondBackwardBackgroundCopy = secondHistogram.getBackwardBackgrounds();
+        std::vector<std::vector<TH2D>> secondBackToBackBackgroundCopy = secondHistogram.getBackToBackBackgrounds();  
         
-        //Background
-        TH2D secondForwardBackgroundCopy = secondHistogram.getForwardBackground();
-        TH2D secondBackwardBackgroundCopy = secondHistogram.getBackwardBackground();
-        TH2D secondBackToBackBackgroundCopy = secondHistogram.getBackToBackBackground();
+        std::vector<std::vector<TH2D>> secondForwardProcessed = secondHistogram.getForwardProcessed();
+        std::vector<std::vector<TH2D>> secondBackwardProcessed = secondHistogram.getBackwardProcessed();
+        std::vector<std::vector<TH2D>> secondBackToBackProcessed = secondHistogram.getBackToBackProcessed();
+   
 
-        this->_noCorrelationForward.Add(&secondForwardBackgroundCopy);
-        this->_noCorrelationBackward.Add(&secondBackwardBackgroundCopy);
-        this->_noCorrelationBackToBack.Add(&secondBackToBackBackgroundCopy);
+        for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
+            //std::transform(this->_eventNumberList[ptNumber].begin(),
+              //             this->_eventNumberList[ptNumber].end(), secondEventNumberList[ptNumber].begin(), results[ptNumber].begin(), std::plus<int>());
 
 
-        //Noramlised
-        TH2D secondForwardProcessed = secondHistogram.getForwardProcessed();
-        TH2D secondBackwardProcessed = secondHistogram.getBackwardProcessed();
-        TH2D secondBackToBackProcessed = secondHistogram.getBackToBackProcessed();
+            int numberOfEntries = static_cast<int>(this->_storedForwardList[ptNumber].size());
+            for (int centralityNumber = 0 ; centralityNumber < numberOfEntries; centralityNumber++) {
+           
+                secondEventNumberList[ptNumber][centralityNumber] = secondEventNumberList[ptNumber][centralityNumber] + this->_eventNumberList[ptNumber][centralityNumber];
+     
+                //Raw
+                this->_storedForwardList[ptNumber][centralityNumber].Add(&secondForwardHistogramCopy[ptNumber][centralityNumber]);
+                this->_storedBackwardList[ptNumber][centralityNumber].Add(&secondBackwardHistogramCopy[ptNumber][centralityNumber]);
+                
+                //Combinatorial and defficiency background
+                this->_noCorrelationForwardList[ptNumber][centralityNumber].Add(&secondForwardBackgroundCopy[ptNumber][centralityNumber]);
+                this->_noCorrelationBackwardList[ptNumber][centralityNumber].Add(&secondBackwardBackgroundCopy[ptNumber][centralityNumber]);
+                
 
-        this->_processedForward.Add(&secondForwardProcessed);
-        this->_processedBackward.Add(&secondBackwardProcessed);
-        this->_processedBackToBack.Add(&secondBackToBackProcessed);
+                //Normalised data
+                this->_processedForwardList[ptNumber][centralityNumber].Add(&secondForwardProcessed[ptNumber][centralityNumber]);
+                this->_processedBackwardList[ptNumber][centralityNumber].Add(&secondBackwardProcessed[ptNumber][centralityNumber]);
+                
+
+                if (ptNumber == 0 ) {
+                    this->_storedBackToBackList[0][centralityNumber].Add(&secondBackToBackHistogramCopy[0][centralityNumber]);
+                    this->_noCorrelationBackToBackList[0][centralityNumber].Add(&secondBackToBackBackgroundCopy[0][centralityNumber]);
+                    this->_processedBackToBackList[0][centralityNumber].Add(&secondBackToBackProcessed[0][centralityNumber]);
+                    secondEventNumberListFMD[0][centralityNumber] = secondEventNumberListFMD[0][centralityNumber] + this->_eventNumberList[0][centralityNumber];
+                }
+
+
+
+
+
+            }
+        }
+        this->_eventNumberList = secondEventNumberList;
+
 
 
     }
@@ -277,17 +286,20 @@ void storeInHist::storeHistogramInFile() {
     std::string storageLocation = "processedData/"+filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
 
     //Stores the histogram
-    TH2D* histogramForwardPointer = &(this->_storedForwardHistogram);
-    TH2D* histogramBackwardPointer = &(this->_storedBackwardHistogram);
-    TH2D* histogramBackToBackPointer = &(this->_storedBackToBackHistogram);
+    std::vector<std::vector<TH2D>>* histogramForwardPointer = &(this->_storedForwardList);
+    std::vector<std::vector<TH2D>>* histogramBackwardPointer = &(this->_storedBackwardList);
+    std::vector<std::vector<TH2D>>* histogramBackToBackPointer = &(this->_storedBackToBackList);
 
-    TH2D* backgroundForwardPointer = &(this->_noCorrelationForward);
-    TH2D* backgroundBackwardPointer = &(this->_noCorrelationBackward);
-    TH2D* backgroundBackToBackPointer = &(this->_noCorrelationBackToBack);
+    std::vector<std::vector<TH2D>>* backgroundForwardPointer = &(this->_noCorrelationForwardList);
+    std::vector<std::vector<TH2D>>* backgroundBackwardPointer = &(this->_noCorrelationBackwardList);
+    std::vector<std::vector<TH2D>>* backgroundBackToBackPointer = &(this->_noCorrelationBackToBackList);
 
-    TH2D* processedForwardPointer = &(this->_processedForward);
-    TH2D* processedBackwardPointer = &(this->_processedBackward);
-    TH2D* processedBackToBackPointer = &(this->_processedBackToBack);
+    std::vector<std::vector<TH2D>>* processedForwardPointer = &(this->_processedForwardList);
+    std::vector<std::vector<TH2D>>* processedBackwardPointer = &(this->_processedBackwardList);
+    std::vector<std::vector<TH2D>>* processedBackToBackPointer = &(this->_processedBackToBackList);
+
+    std::vector<std::vector<int>>* eventNumberListPointer = &(this->_eventNumberList);
+    std::vector<std::vector<int>>* eventNumberListFMDPointer = &(this->_eventNumberListFMD);
 
 
     TFile writeData(storageLocation.c_str(), "RECREATE"); 
@@ -305,6 +317,9 @@ void storeInHist::storeHistogramInFile() {
     writeData.WriteObject(processedBackwardPointer, "dataBackwardHistogramProcessed");
     writeData.WriteObject(processedBackToBackPointer, "dataBackToBackHistogramProcessed");
 
+    writeData.WriteObject(eventNumberListPointer, "eventNumberList");
+    writeData.WriteObject(eventNumberListFMDPointer, "eventNumberListFMD");
+
     writeData.Close();
 
 }
@@ -316,30 +331,79 @@ void storeInHist::loadProcessed() {
         std::cout << "Error: Trying to process unloaded histograms" << std::endl;
     }
 
-    TH2D histogramForward = this->getForwardHistogram();
-    TH2D histogramBackward = this->getBackwardHistogram();
-    TH2D histogramBackToBack = this->getBackToBackHistogram();
+    std::vector<std::vector<TH2D>> histogramForward = this->getForwardHistograms();
+    std::vector<std::vector<TH2D>> histogramBackward = this->getBackwardHistograms();
+    std::vector<std::vector<TH2D>> histogramBackToBack = this->getBackToBackHistograms();
 
-    TH2D histogramForwardBackground = this->getForwardBackground();
-    TH2D histogramBackwardBackground = this->getBackwardBackground();
-    TH2D histogramBackToBackBackground = this->getBackToBackBackground();
+    std::vector<std::vector<TH2D>> histogramForwardBackground = this->getForwardBackgrounds();
+    std::vector<std::vector<TH2D>> histogramBackwardBackground = this->getBackwardBackgrounds();
+    std::vector<std::vector<TH2D>> histogramBackToBackBackground = this->getBackToBackBackgrounds();
+
+    std::vector<std::vector<TH2D>> processedForward;
+    std::vector<std::vector<TH2D>> processedBackward;
+    std::vector<std::vector<TH2D>> processedBackToBack;
+
+    std::vector<TH2D> placeHolderVector;
+    TH2D placeHolderHistogram;
+
+
+    for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
+        processedForward.push_back(placeHolderVector);
+        processedBackward.push_back(placeHolderVector);
+        if (ptNumber == 0) {
+            processedBackToBack.push_back(placeHolderVector);
+        }
+
+        int numberOfEntries = static_cast<int>(this->_storedForwardList[ptNumber].size());
+        for (int centralityNumber = 0 ; centralityNumber < numberOfEntries; centralityNumber++) {
+            Double_t maxValueForward = histogramForwardBackground[ptNumber][centralityNumber].GetMaximum();
+            Double_t maxValueBackward = histogramBackwardBackground[ptNumber][centralityNumber].GetMaximum();
+            
+            
+            // *= syntax does not seem to be implemented for TH2D
+            TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground[ptNumber][centralityNumber];
+            TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground[ptNumber][centralityNumber];
+            
+
+            histogramForward[ptNumber][centralityNumber].Divide(&normalisedForwardBackground);
+            histogramBackward[ptNumber][centralityNumber].Divide(&normalisedBackwardBackground);
+            
+
+            int tpcTracksNormalisation = this->_eventNumberList[ptNumber][centralityNumber];
+            int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber];
+            double both = tpcTracksNormalisation*fmdTracksNormalisation;
+            double fmdSquare = fmdTracksNormalisation*fmdTracksNormalisation;
+            (void)both;
+            (void)fmdSquare;
+
+            processedForward[ptNumber].push_back(histogramForward[ptNumber][centralityNumber]*(1.0/both));
+            processedBackward[ptNumber].push_back(histogramBackward[ptNumber][centralityNumber]*(1.0/both));
+
+            //Stores the processed histograms
+
+            if (ptNumber == 0) {
+                Double_t maxValueBackToBack = histogramBackToBackBackground[0][centralityNumber].GetMaximum();
+                
+
+                TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground[0][centralityNumber];
+                histogramBackToBack[0][centralityNumber].Divide(&normalisedBackToBackBackground);
+  
+                processedBackToBack[0].push_back(histogramBackToBack[0][centralityNumber]*(1.0/fmdSquare)); 
+
+            }
+
+
+        }
+
+    }
+
+    this->_processedForwardList = processedForward;
+    this->_processedBackwardList = processedBackward;
+    this->_processedBackToBackList = processedBackToBack;
+
     
-    Double_t maxValueForward = histogramForwardBackground.GetMaximum();
-    Double_t maxValueBackward = histogramBackwardBackground.GetMaximum();
-    Double_t maxValueBackToBack = histogramBackToBackBackground.GetMaximum();
-    
-    // *= syntax does not seem to be implemented for TH2D
-    TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground;
-    TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground;
-    TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground;
 
-    histogramForward.Divide(&normalisedForwardBackground);
-    histogramBackward.Divide(&normalisedBackwardBackground);
-    histogramBackToBack.Divide(&normalisedBackToBackBackground);
 
-    this->_processedForward = histogramForward;
-    this->_processedBackward = histogramBackward;
-    this->_processedBackToBack = histogramBackToBack;
 }
 
 
@@ -362,33 +426,38 @@ storeInHist::storeInHist(Int_t number) {
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
 
-    TH2D* histogramForward = (TH2D*)dataFile.Get("dataForwardHistogram");
-    TH2D* histogramBackward = (TH2D*)dataFile.Get("dataBackwardHistogram");
-    TH2D* histogramBackToBack = (TH2D*)dataFile.Get("dataBackToBackHistogram");
+    std::vector<std::vector<TH2D>>* histogramForward = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataForwardHistogram");
+    std::vector<std::vector<TH2D>>* histogramBackward = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackwardHistogram");
+    std::vector<std::vector<TH2D>>* histogramBackToBack = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackToBackHistogram");
     
-    TH2D* histogramForwardBackground = (TH2D*)dataFile.Get("dataForwardHistogramBackground");
-    TH2D* histogramBackwardBackground = (TH2D*)dataFile.Get("dataBackwardHistogramBackground");
-    TH2D* histogramBackToBackBackground = (TH2D*)dataFile.Get("dataBackToBackHistogramBackground");
+    std::vector<std::vector<TH2D>>* histogramForwardBackground = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataForwardHistogramBackground");
+    std::vector<std::vector<TH2D>>* histogramBackwardBackground = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackwardHistogramBackground");
+    std::vector<std::vector<TH2D>>* histogramBackToBackBackground = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackToBackHistogramBackground");
+    std::vector<std::vector<int>>* eventNumberListPtr = (std::vector<std::vector<int>>*)dataFile.Get("eventNumberList");
+    std::vector<std::vector<int>>* eventNumberListFMDPtr = (std::vector<std::vector<int>>*)dataFile.Get("eventNumberListFMD");
     
-    this->_storedForwardHistogram = *histogramForward;
-    this->_storedBackwardHistogram = *histogramBackward;
-    this->_storedBackToBackHistogram = *histogramBackToBack;
+    this->_storedForwardList = *histogramForward;
+    this->_storedBackwardList = *histogramBackward;
+    this->_storedBackToBackList = *histogramBackToBack;
 
-    this->_noCorrelationForward = *histogramForwardBackground;
-    this->_noCorrelationBackward = *histogramBackwardBackground;
-    this->_noCorrelationBackToBack = *histogramBackToBackBackground;
+    this->_noCorrelationForwardList = *histogramForwardBackground;
+    this->_noCorrelationBackwardList = *histogramBackwardBackground;
+    this->_noCorrelationBackToBackList = *histogramBackToBackBackground;
+    
+    this->_eventNumberList = *eventNumberListPtr;
+    this->_eventNumberListFMD = *eventNumberListFMDPtr;
 
 
     //Old versions of the program did not save the processed histograms as member variables 
-    // nor in the file, this is just for backwards compatibility.
+    // nor in the file. Not reading in processed histograms directly is for backwards compatibility.
     try {
-        TH2D* histogramForwardProcessed = (TH2D*)dataFile.Get("dataForwardHistogramProcessed");
-        TH2D* histogramBackwardProcessed = (TH2D*)dataFile.Get("dataBackwardHistogramProcessed");
-        TH2D* histogramBackToBackProcessed = (TH2D*)dataFile.Get("dataBackToBackHistogramProcessed");
+        std::vector<std::vector<TH2D>>* histogramForwardProcessed = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataForwardHistogramProcessed");
+        std::vector<std::vector<TH2D>>* histogramBackwardProcessed = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackwardHistogramProcessed");
+        std::vector<std::vector<TH2D>>* histogramBackToBackProcessed = (std::vector<std::vector<TH2D>>*)dataFile.Get("dataBackToBackHistogramProcessed");
 
-        this->_processedForward = *histogramForwardProcessed;
-        this->_processedBackward = *histogramBackwardProcessed;
-        this->_processedBackToBack = *histogramBackToBackProcessed;
+        this->_processedForwardList = *histogramForwardProcessed;
+        this->_processedBackwardList = *histogramBackwardProcessed;
+        this->_processedBackToBackList = *histogramBackToBackProcessed;
 
 
     } catch (...) {
@@ -415,32 +484,40 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
                                                     Double_t centralityMin, Double_t centralityMax,
                                                     Double_t ptMin, Double_t ptMax,
                                                     Double_t etaMin, Double_t etaMax,
-                                                    Int_t countsPhi, Int_t countsEta) : _pathToFile{pathToFile} {
+                                                    Int_t countsPhi, Int_t countsEta,
+                                                    Int_t start, Int_t stop) : _pathToFile{pathToFile} {
     //Gets the number of entries in the tree
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
     Int_t dataCount = dataTree->GetEntries();
     dataFile.Close();
+    if (stop > dataCount) {
+        stop = dataCount;
+    }
     
 
     //loadHistogram creates the three histograms that are wanted. Separate method as it is very lengthy.
-    std::vector<TH2D> histogramVector = loadHistogram(pathToFile, cutOption,
+    std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector<int>>, std::vector<std::vector<int>> > returnVector = loadHistograms(pathToFile, cutOption,
                                                       centralityMin, centralityMax,
                                                       ptMin, ptMax,
                                                       etaMin, etaMax,
                                                       countsPhi, countsEta,
-                                                      0, dataCount);
+                                                      start, stop);
     
 
-    this->_storedForwardHistogram = histogramVector[0];
-    this->_storedBackwardHistogram = histogramVector[1];
-    this->_storedBackToBackHistogram = histogramVector[2];
-
-    this->_noCorrelationForward = histogramVector[3];
-    this->_noCorrelationBackward = histogramVector[4];
-    this->_noCorrelationBackToBack = histogramVector[5];
-
     
+
+    this->_storedForwardList = std::get<0>(returnVector)[0];
+    this->_storedBackwardList = std::get<0>(returnVector)[1];
+    this->_storedBackToBackList = std::get<0>(returnVector)[2];
+
+    this->_noCorrelationForwardList = std::get<0>(returnVector)[3];
+    this->_noCorrelationBackwardList = std::get<0>(returnVector)[4];
+    this->_noCorrelationBackToBackList = std::get<0>(returnVector)[5];
+
+    this->_eventNumberList = std::get<1>(returnVector);
+    this->_eventNumberListFMD = std::get<2>(returnVector);
+
 
     
     this->_initialised = 1;
@@ -451,28 +528,161 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 }
 
 
+
+
 //Helper-method to a constructor to read in the data properly into the correct histograms
-std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cutOption, 
+std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector<int>>, std::vector<std::vector<int>> > storeInHist::loadHistograms(std::string pathToFile, Short_t cutOption, 
                                             Double_t centralityMin, Double_t centralityMax,
                                             Double_t ptMin, Double_t ptMax,
                                             Double_t etaMin, Double_t etaMax,
                                             Int_t countsPhi, Int_t countsEta,
                                             Int_t start, Int_t stop) {
 
-    //Number of old events to store                                          
+    //Parameters                                      
     Int_t numberOlderEventsToSave = 5;
+    (void)cutOption; //outdated variable
+
+    std::vector<Double_t> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6}; //{0.2, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6
+    if (ptMin < startOfPtIntervals[0]) {
+        ptMin = startOfPtIntervals[0];
+    }
+    if (ptMax > startOfPtIntervals[startOfPtIntervals.size()-1]) {
+        ptMax = startOfPtIntervals[startOfPtIntervals.size()-1];
+    }
+
+    std::vector<Double_t> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
+    int numberOfEntriesCentrality = static_cast<int>(startOfCentralityIntervals.size());
+    int numberOfEntriesPt = static_cast<int>(startOfPtIntervals.size());
     
-    //Creates the histograms which will be filled
-    TH2D histogramForward("histogramForward", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
-    TH2D histogramBackward("histogramBackWard", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
-    TH2D histogramBackToBack("histogramBackToBack", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    //Sets up the correct structures 
+
+    //-Histograms
+    std::vector<std::vector<TH2D>> forwardVector;
+    std::vector<std::vector<TH2D>> backwardVector;
+    std::vector<std::vector<TH2D>> backToBackVector;
+
+    std::vector<std::vector<TH2D>> forwardBackgroundVector;
+    std::vector<std::vector<TH2D>> backwardBackgroundVector;
+    std::vector<std::vector<TH2D>> backToBackBackgroundVector;
+
+    std::vector<std::vector<int>> eventNumbers;
+    std::vector<std::vector<int>> eventNumbersFMD;
+    std::vector<int> eventNumbersPlaceHolder;
+    
+    std::vector<TH2D> placeHolderVector;
+    TH2D placeHolderHistogram("histogram", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+
+    //-Event Mixing
+    std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldPhiTracksTPCvector;
+    std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldEtaTracksTPCvector;
+    std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldPhiTracksBackwardFMDvector;
+    std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldEtaTracksBackwardFMDvector;
+    std::vector<std::vector<std::vector<std::vector<Int_t>>>> oldMultiplicityTracksBackwardFMDvector;
+
+    std::vector<std::vector<std::vector<Double_t>>> oldPhiTracksTPCvectorPlaceHolder;
+    std::vector<std::vector<std::vector<Double_t>>> oldEtaTracksTPCvectorPlaceHolder;
+    std::vector<std::vector<std::vector<Double_t>>> oldPhiTracksBackwardFMDvectorPlaceHolder;
+    std::vector<std::vector<std::vector<Double_t>>> oldEtaTracksBackwardFMDvectorPlaceHolder;
+    std::vector<std::vector<std::vector<Int_t>>> oldMultiplicityTracksBackwardFMDvectorPlaceHolder;
+    
+
+    std::vector<std::vector<Double_t>> oldPhiTracksTPC;
+    std::vector<std::vector<Double_t>> oldEtaTracksTPC;
+    std::vector<std::vector<Double_t>> oldPhiTracksBackwardFMD;
+    std::vector<std::vector<Double_t>> oldEtaTracksBackwardFMD;
+    std::vector<std::vector<Int_t>> oldMultiplicityTracksBackwardFMD;
 
 
-    TH2D backgroundForward("histogramForwardBackground", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
-    TH2D backgroundBackward("histogramBackWardBackground", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
-    TH2D backgroundBackToBack("histogramBackToBackBackground", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
+    std::vector<std::vector<std::vector<Double_t>>> tracksPhiTPCvector;
+    std::vector<std::vector<std::vector<Double_t>>> tracksEtaTPCvector;
+
+    std::vector<std::vector<Double_t>> tracksPhiTPCvectorPlaceHolder;
+    std::vector<std::vector<Double_t>> tracksEtaTPCvectorPlaceHolder;
+
+    std::vector<Double_t> forwardTracksPhi;
+    forwardTracksPhi.reserve(500);
+    std::vector<Double_t> backwardTracksPhi;
+    backwardTracksPhi.reserve(500);
+    std::vector<Double_t> forwardTracksEta;
+    forwardTracksEta.reserve(5000);
+    std::vector<Double_t> backwardTracksEta; 
+    backwardTracksEta.reserve(500);
+    std::vector<Int_t> forwardTracksMult;
+    forwardTracksMult.reserve(500);
+    std::vector<Int_t> backwardTracksMult;
+    backwardTracksMult.reserve(500);
+
+
+    std::vector<Double_t> tracksPhiTPC;
+    tracksPhiTPC.reserve(150000);
+    std::vector<Double_t> tracksEtaTPC;
+    tracksEtaTPC.reserve(150000);
     
+
     
+    for (int ptNumber = 0; ptNumber < numberOfEntriesPt -1 ; ptNumber++) { //The last interval is 85-90, hence the -1 
+        forwardVector.push_back(placeHolderVector);
+        backwardVector.push_back(placeHolderVector);
+        forwardBackgroundVector.push_back(placeHolderVector);
+        backwardBackgroundVector.push_back(placeHolderVector);
+
+
+        tracksPhiTPCvector.push_back(tracksPhiTPCvectorPlaceHolder);
+        tracksEtaTPCvector.push_back(tracksEtaTPCvectorPlaceHolder);
+        oldPhiTracksTPCvector.push_back(oldPhiTracksTPCvectorPlaceHolder);
+        oldEtaTracksTPCvector.push_back(oldEtaTracksTPCvectorPlaceHolder);
+
+        eventNumbers.push_back(eventNumbersPlaceHolder);
+
+        //--Current event
+        if (ptNumber == 0) { //There are no pT cuts in the fmd:s, structure is kept for consistency
+            backToBackVector.push_back(placeHolderVector);
+            backToBackBackgroundVector.push_back(placeHolderVector);
+            
+            oldPhiTracksBackwardFMDvector.push_back(oldPhiTracksBackwardFMDvectorPlaceHolder);
+            oldEtaTracksBackwardFMDvector.push_back(oldEtaTracksBackwardFMDvectorPlaceHolder);
+            oldMultiplicityTracksBackwardFMDvector.push_back(oldMultiplicityTracksBackwardFMDvectorPlaceHolder);
+            eventNumbersFMD.push_back(eventNumbersPlaceHolder);
+        }
+
+
+
+        for (int centralityNumber = 0 ; centralityNumber < numberOfEntriesCentrality -1; centralityNumber++) { //The last interval is 5-6, hence the -1 
+
+            forwardVector[ptNumber].push_back(placeHolderHistogram);
+            backwardVector[ptNumber].push_back(placeHolderHistogram);
+            forwardBackgroundVector[ptNumber].push_back(placeHolderHistogram);
+            backwardBackgroundVector[ptNumber].push_back(placeHolderHistogram);
+
+
+            oldPhiTracksTPCvector[ptNumber].push_back(oldPhiTracksTPC);
+            oldEtaTracksTPCvector[ptNumber].push_back(oldEtaTracksTPC);
+            tracksPhiTPCvector[ptNumber].push_back(tracksPhiTPC);
+            tracksEtaTPCvector[ptNumber].push_back(tracksEtaTPC);
+
+            
+            eventNumbers[ptNumber].push_back(0);
+
+
+            if (ptNumber == 0) {
+                backToBackVector[0].push_back(placeHolderHistogram);
+                backToBackBackgroundVector[0].push_back(placeHolderHistogram);
+
+                oldPhiTracksBackwardFMDvector[0].push_back(oldPhiTracksBackwardFMD);
+                oldEtaTracksBackwardFMDvector[0].push_back(oldEtaTracksBackwardFMD);
+                oldMultiplicityTracksBackwardFMDvector[0].push_back(oldMultiplicityTracksBackwardFMD);
+
+                eventNumbersFMD[ptNumber].push_back(0);
+            }
+
+
+        }
+
+
+
+    }
+    
+
     //Opens the data
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
@@ -493,10 +703,10 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-    Int_t approvedTPCTracksGlobal = 0;
-    Int_t approvedForwardFMDTracksGlobal = 0;
-    Int_t approvedTPCTracks = 0;
-    Int_t approvedForwardFMDTracks = 0;
+
+    int centralityIndex;
+    int ptIndex;
+
 
     //Event-variables
     Double_t centrality;
@@ -507,11 +717,7 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     Short_t cutFlag;
     Double_t pT; //Tranvsverse momentum
     
-    std::vector<Double_t> tracksPhiTPC;
-    tracksPhiTPC.reserve(200000);
-    std::vector<Double_t> tracksEtaTPC;
-    tracksEtaTPC.reserve(120000);
-    
+
 
     //FMD-variables
     Double_t phiValFMD; //For TPC-FMD correlations
@@ -519,242 +725,56 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     Int_t fmdMultiplicity;
 
 
-    std::vector<Double_t> forwardTracksPhi;
-    forwardTracksPhi.reserve(600);
-    std::vector<Double_t> backwardTracksPhi;
-    backwardTracksPhi.reserve(600);
-    std::vector<Double_t> forwardTracksEta;
-    forwardTracksEta.reserve(600);
-    std::vector<Double_t> backwardTracksEta; 
-    backwardTracksEta.reserve(600);
-    std::vector<Int_t> forwardTracksMult;
-    forwardTracksMult.reserve(600);
-    std::vector<Int_t> backwardTracksMult;
-    backwardTracksMult.reserve(600);
-
     
     //Values to be stored in the histograms
     Double_t etaDiff; //For TPC-FMD correlations
     Double_t phiDiff;
 
 
-    //Storing old events' data
-    std::vector<std::vector<Double_t>> oldPhiTracksTPC;
-    oldPhiTracksTPC.reserve(5);
-    std::vector<std::vector<Double_t>> oldEtaTracksTPC;
-    oldEtaTracksTPC.reserve(5);
-
-/*     std::vector<std::vector<Double_t>> oldPhiTracksForwardFMD;
-    oldPhiTracksForwardFMD.reserve(5);
-    std::vector<std::vector<Double_t>> oldEtaTracksForwardFMD;
-    oldEtaTracksForwardFMD.reserve(5);
-    std::vector<std::vector<Int_t>> oldMultiplicityTracksForwardFMD;
-    oldMultiplicityTracksForwardFMD.reserve(5); */
-
-    std::vector<std::vector<Double_t>> oldPhiTracksBackwardFMD;
-    oldPhiTracksBackwardFMD.reserve(5);
-    std::vector<std::vector<Double_t>> oldEtaTracksBackwardFMD;
-    oldEtaTracksBackwardFMD.reserve(5);
-    std::vector<std::vector<Int_t>> oldMultiplicityTracksBackwardFMD;
-    oldMultiplicityTracksBackwardFMD.reserve(5);
-
-
-
-
-    //Loads in the first numberOlderEventsToSave events satisfying our conditions
-    Int_t startCounter = 0;
-    while (static_cast<int>(oldPhiTracksTPC.size()) < numberOlderEventsToSave) {
-        //Reads in the tracks for an event
-        dataTree->GetEntry(startCounter);
-        trackCountTPC = tpcTrack->GetEntries(); //Number of tracks in the event
-        trackCountFMD = fmdTrack->GetEntries();
-
-
-        //Checks if the centrality is within the desired region        
-        centrality = event->fCent;
-        if ((centrality < centralityMin) || (centrality > centralityMax)) {
-            startCounter++;
-            continue;
-        }
-
-
-
-
-        //Clears Data from a previous event
-        tracksPhiTPC.clear();
-        tracksEtaTPC.clear();
-
-        forwardTracksEta.clear();
-        backwardTracksEta.clear();
-        forwardTracksPhi.clear();
-        backwardTracksPhi.clear();
-        forwardTracksMult.clear();
-        backwardTracksMult.clear();
-
-
-        approvedForwardFMDTracks = 0;
-        //Loops through all tracks in the FMD
-        for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
-            //Gets details about the track
-            currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
-            fmdMultiplicity = currentTrackFMD->fMult;
-            phiValFMD = currentTrackFMD->fPhi;
-            etaValFMD = currentTrackFMD->fEta;
-
-
-            //Cutting away data where the resolution is low
-            if ((etaValFMD < -3.1) || (etaValFMD > -2)) { //Maybe these numbers should be set at the top of the method for easier changing...
-                if ((etaValFMD < 3.8) || (etaValFMD > 4.7)) {
-                    if ((etaValFMD < 2.5) || (etaValFMD > 3.1)) {
-                        continue;
-
-                    }
-                }
-            }
-
-            //Stores values for the forward and backward FMD-tracks.
-            if (etaValFMD >= 0) { 
-                forwardTracksPhi.push_back(phiValFMD);
-                forwardTracksEta.push_back(etaValFMD);
-                forwardTracksMult.push_back(fmdMultiplicity);
-                
-            } else { 
-                backwardTracksPhi.push_back(phiValFMD);
-                backwardTracksEta.push_back(etaValFMD);
-                backwardTracksMult.push_back(fmdMultiplicity);
-
-            }
-
-            
-            approvedTPCTracks = 0;
-            //Loops through all tracks in the TPC so TPC-FMD correlations may be calculated
-            for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
-                currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
-                phiValTPC = currentTrackTPC->fPhi;
-                etaValTPC = currentTrackTPC->fEta;
-                pT = currentTrackTPC->fPt;
-                cutFlag = currentTrackTPC->fTrFlag;
-                
-                phiDiff = phiValTPC - phiValFMD;
-                etaDiff = etaValTPC - etaValFMD;
-
-                //Makes sures all values are positive (we want all values within one period)
-                if (phiDiff < 0) {phiDiff += 2*TMath::Pi();}
-
-
-                //Cutting away data where with the wrong flag(s).
-                if (cutOption == 3) {
-                    //Intentionally does nothing
-                } else {
-                    if (cutFlag != cutOption) {
-                        continue;
-                    }
-                }
-
-                //Cuts away unwanted pT:s (pT = transverse momentum)
-                if ((pT < ptMin) || (pT > ptMax)) {
-                    continue;
-                }
-
-
-                //Cutting away data where the resolution is low
-                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
-                    continue;
-                } 
-
-                approvedTPCTracks++;
-
-                //Stores the read-in and approved values for later event mixing
-                tracksPhiTPC.push_back(phiValTPC);
-                tracksEtaTPC.push_back(etaValTPC);
-
-                //Fills the correct histogram. The sign determines if it is the forwards or backwards FMD
-                if (etaValFMD > 0) {
-                    histogramForward.Fill(phiDiff, etaDiff, fmdMultiplicity);
-
-                } else {
-                    histogramBackward.Fill(phiDiff, etaDiff, fmdMultiplicity);
-
-                }
-
-            } //TPC-loop end
-
-
-
-            //Makes sure that all events have not been cut away
-            if ( (tracksPhiTPC.size() == 0) && ((forwardTracksPhi.size() == 0) || (backwardTracksPhi.size() == 0)) ) {
-                startCounter++;
-                continue;
-            }
-
-            approvedForwardFMDTracks += fmdMultiplicity;
-        } //FMD-loop end
-
-
-        approvedTPCTracksGlobal += approvedTPCTracks;
-        approvedForwardFMDTracksGlobal += approvedForwardFMDTracks;
-
-        calculateCorrelation(histogramBackToBack, forwardTracksPhi, forwardTracksEta,
-                            backwardTracksPhi, backwardTracksEta,
-                            forwardTracksMult, backwardTracksMult);
-
-
-
-
-        oldPhiTracksTPC.push_back(tracksPhiTPC);
-        oldEtaTracksTPC.push_back(tracksEtaTPC);
-
-/*         oldPhiTracksForwardFMD.push_back(forwardTracksPhi);
-        oldEtaTracksForwardFMD.push_back(forwardTracksEta);
-        oldMultiplicityTracksForwardFMD.push_back(forwardTracksMult); */
-        
-        oldPhiTracksBackwardFMD.push_back(backwardTracksPhi);
-        oldEtaTracksBackwardFMD.push_back(backwardTracksEta);
-        oldMultiplicityTracksBackwardFMD.push_back(backwardTracksMult);
-        
-
-
-        startCounter++;
-
-    } //End of while-loop
-
-    
-
     //Event-loop
-    for (Int_t eventNumber = start+startCounter; eventNumber < stop; eventNumber++) {
+    
+    for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
+        
         //Reads in the tracks for an event
         dataTree->GetEntry(eventNumber);
-        trackCountTPC = tpcTrack->GetEntries(); 
-        trackCountFMD = fmdTrack->GetEntries();
 
+        
 
-        //Checks if the centrality is within the desired region        
+        //Determines which interavl the centrality belongs to and skips it if it isn't wanted.     
         centrality = event->fCent;
         if ((centrality < centralityMin) || (centrality > centralityMax)) {
             continue;
+        } else {
+            for (int centralityNumber = 0; centralityNumber < numberOfEntriesCentrality -1; centralityNumber++) {
+                if ((centrality >= startOfCentralityIntervals[centralityNumber]) && (centrality < startOfCentralityIntervals[centralityNumber+1])) {
+                    centralityIndex = centralityNumber;
+                    break;
+                }
+            }
+
         }
 
-
-        //Clears Data from a previous event
-        tracksPhiTPC.clear();
-        tracksEtaTPC.clear();
-
+        
         forwardTracksEta.clear();
         backwardTracksEta.clear();
         forwardTracksPhi.clear();
         backwardTracksPhi.clear();
         forwardTracksMult.clear();
         backwardTracksMult.clear();
+        for (int ptNumber = 0; ptNumber < numberOfEntriesPt - 1; ptNumber++) {
+            tracksPhiTPCvector[ptNumber][centralityIndex].clear();
+            tracksEtaTPCvector[ptNumber][centralityIndex].clear();
+        }
 
-        approvedForwardFMDTracks = 0;
+
+        trackCountTPC = tpcTrack->GetEntries(); 
+        trackCountFMD = fmdTrack->GetEntries();
         //Loops through all tracks in the FMD
+        
         for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
             //Gets details about the track
             currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
-            fmdMultiplicity = currentTrackFMD->fMult;
-            phiValFMD = currentTrackFMD->fPhi;
             etaValFMD = currentTrackFMD->fEta;
-
 
             //Cutting away data where the resolution is low
             if ((etaValFMD < -3.1) || (etaValFMD > -2)) {
@@ -766,149 +786,204 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
                 }
             }
 
+            fmdMultiplicity = currentTrackFMD->fMult;
+            phiValFMD = currentTrackFMD->fPhi;
+
             //Stores values for the forward and backward FMD-tracks.
             if (etaValFMD >= 0) { 
-                forwardTracksEta.push_back(etaValFMD);
                 forwardTracksPhi.push_back(phiValFMD);
+                forwardTracksEta.push_back(etaValFMD);
                 forwardTracksMult.push_back(fmdMultiplicity);
                 
             } else { 
-                backwardTracksEta.push_back(etaValFMD);
                 backwardTracksPhi.push_back(phiValFMD);
+                backwardTracksEta.push_back(etaValFMD);
                 backwardTracksMult.push_back(fmdMultiplicity);
 
             }
 
 
-            approvedTPCTracks = 0;
+            
+            
+            
+            
             //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
             for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
                 currentTrackTPC = static_cast<AliLWTPCTrack*>((*tpcTrack)[tpcTrackNumber]);
-                phiValTPC = currentTrackTPC->fPhi;
-                etaValTPC = currentTrackTPC->fEta;
-                pT = currentTrackTPC->fPt;
                 cutFlag = currentTrackTPC->fTrFlag;
-                phiDiff = phiValTPC - phiValFMD;
-                etaDiff = etaValTPC - etaValFMD;
-
-                //Makes sures all values are positive (we want all values within one period)
-                if (phiDiff < 0) {phiDiff += 2*TMath::Pi();}
-
-
                 //Cutting away data where with the wrong flag(s).
-                if (cutOption == 3) {
-                    //Intentionally does nothing
-                } else {
-                    if (cutFlag != cutOption) {
-                        continue;
-                    }
-                }
+                if (!(cutFlag & 2)) {
+                    continue;
+                } 
 
+                //Cutting away data where the resolution is low
+                etaValTPC = currentTrackTPC->fEta;
+                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
+                    continue;
+                } 
+                
                 //Cuts away unwanted pT:s
+                pT = currentTrackTPC->fPt;
                 if ((pT < ptMin) || (pT > ptMax)) {
                     continue;
                 }
 
+                for (int ptNumber = 0; ptNumber < numberOfEntriesPt -1; ptNumber++) {
+                    if ( (pT >= startOfPtIntervals[ptNumber]) && (pT < startOfPtIntervals[ptNumber+1]) ) {
+                        ptIndex = ptNumber;
+                        break;
+                    }
+                }
+                
+                
 
-                //Cutting away data where the resolution is low
-                if ((etaValTPC < -0.75) || (etaValTPC > 0.75)) { 
-                    continue;
-                } 
+                phiValTPC = currentTrackTPC->fPhi;
+                phiDiff = phiValFMD - phiValTPC;
+                etaDiff = etaValFMD - etaValTPC;
 
-                approvedTPCTracks++;
+                //Makes sures all values are positive (we want all values within one period)
+                if (phiDiff < 0) {phiDiff += 2*TMath::Pi();}
+
+                
+                if (fmdTrackNumber == 0) {
+                    eventNumbers[ptIndex][centralityIndex] += 1;
+                }
+
                 //Stores the read-in and approved values for later event mixing
-                tracksPhiTPC.push_back(phiValTPC);
-                tracksEtaTPC.push_back(etaValTPC);
+            
+                tracksPhiTPCvector[ptIndex][centralityIndex].push_back(phiValTPC);
+                tracksEtaTPCvector[ptIndex][centralityIndex].push_back(etaValTPC);
+                
 
                 //Fills the correct histogram. The sign determines if it is the forwards or backwards FMD
                 if (etaValFMD > 0) {
-                    histogramForward.Fill(phiDiff, etaDiff, fmdMultiplicity);
+                    forwardVector[ptIndex][centralityIndex].Fill(phiDiff, etaDiff, fmdMultiplicity);
 
                 } else {
-                    histogramBackward.Fill(phiDiff, etaDiff, fmdMultiplicity);
+                    backwardVector[ptIndex][centralityIndex].Fill(phiDiff, etaDiff, fmdMultiplicity);
 
                 }
 
+                
+
             } //TPC-loop end
-
-
-
+  
+        
+            
             
 
             //Event mixing start
             //FMD-oldTPC correlations
             if (etaValFMD > 0) {
-                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPC.size()); oldEventNumber++) {
-                    calculateSingleCorrelation(backgroundForward, phiValFMD, etaValFMD,
-                                    oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
-                                    fmdMultiplicity);
+                for (int ptNumber = 0; ptNumber < numberOfEntriesPt-1; ptNumber++) {
+                    for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPCvector[ptNumber][centralityIndex].size()); oldEventNumber++) {     
+
+                        calculateSingleCorrelation(forwardBackgroundVector[ptNumber][centralityIndex], phiValFMD, etaValFMD,
+                                        oldPhiTracksTPCvector[ptNumber][centralityIndex][oldEventNumber], 
+                                        oldEtaTracksTPCvector[ptNumber][centralityIndex][oldEventNumber],
+                                        fmdMultiplicity);
+
+                    }
 
                 }
             } else {
-                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPC.size()); oldEventNumber++) {
-                    calculateSingleCorrelation(backgroundBackward, phiValFMD, etaValFMD,
-                                    oldPhiTracksTPC[oldEventNumber], oldEtaTracksTPC[oldEventNumber],
-                                    fmdMultiplicity); 
+                for (int ptNumber = 0; ptNumber < numberOfEntriesPt-1; ptNumber++) {
+                    for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksTPCvector[ptNumber][centralityIndex].size()); oldEventNumber++) {
+                        calculateSingleCorrelation(backwardBackgroundVector[ptNumber][centralityIndex], phiValFMD, etaValFMD,
+                                        oldPhiTracksTPCvector[ptNumber][centralityIndex][oldEventNumber], 
+                                        oldEtaTracksTPCvector[ptNumber][centralityIndex][oldEventNumber],
+                                        fmdMultiplicity); 
+                    }
 
                 }           
             }
 
             //forwardFMD-oldBackwardFMD
             if (etaValFMD > 0 ) {
-                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksBackwardFMD.size()); oldEventNumber++) {       
-                    calculateSingleCorrelation(backgroundBackToBack, phiValFMD, etaValFMD,
-                                        oldPhiTracksBackwardFMD[oldEventNumber], oldEtaTracksBackwardFMD[oldEventNumber],
-                                        fmdMultiplicity, oldMultiplicityTracksBackwardFMD[oldEventNumber]);
+                for (int oldEventNumber = 0; oldEventNumber < static_cast<int>(oldPhiTracksBackwardFMDvector[0][centralityIndex].size()); oldEventNumber++) {       
+                    calculateSingleCorrelation(backToBackBackgroundVector[0][centralityIndex], phiValFMD, etaValFMD,
+                                        oldPhiTracksBackwardFMDvector[0][centralityIndex][oldEventNumber], oldEtaTracksBackwardFMDvector[0][centralityIndex][oldEventNumber],
+                                        fmdMultiplicity, oldMultiplicityTracksBackwardFMDvector[0][centralityIndex][oldEventNumber]);
 
                 }                
             }
 
+           
             //Event Mixing End
 
             //Keeping track of how many tracks that are approved for later normalisation
-            approvedForwardFMDTracks++;
+            eventNumbersFMD[0][centralityIndex] += 1;
         } //FMD-loop end
 
-        approvedForwardFMDTracksGlobal += approvedForwardFMDTracks;
-        approvedTPCTracksGlobal += approvedTPCTracks;
+
 
         //Calculates FMD-FMD correlations
-        calculateCorrelation(histogramBackToBack, forwardTracksPhi, forwardTracksEta, 
+        calculateCorrelation(backToBackVector[0][centralityIndex], forwardTracksPhi, forwardTracksEta, 
                             backwardTracksPhi, backwardTracksEta, 
                             forwardTracksMult, backwardTracksMult);
 
        
+        
 
 
-
+        
 
         //Updates the stored old events with the current one and removes the oldest one
-        oldPhiTracksTPC.push_back(tracksPhiTPC);
-        oldPhiTracksTPC.erase(oldPhiTracksTPC.begin());
-        oldEtaTracksTPC.push_back(tracksEtaTPC);
-        oldEtaTracksTPC.erase(oldEtaTracksTPC.begin());
+        for (int ptNumber = 0; ptNumber < numberOfEntriesPt-1; ptNumber++) {
+            if (static_cast<int>(tracksPhiTPCvector[ptNumber][centralityIndex].size()) >= 1) {
+                oldPhiTracksTPCvector[ptNumber][centralityIndex].push_back(tracksPhiTPCvector[ptNumber][centralityIndex]);
+                oldEtaTracksTPCvector[ptNumber][centralityIndex].push_back(tracksEtaTPCvector[ptNumber][centralityIndex]);
+            }
 
-        oldPhiTracksBackwardFMD.push_back(backwardTracksPhi);
-        oldPhiTracksBackwardFMD.erase(oldPhiTracksBackwardFMD.begin());
-        oldEtaTracksBackwardFMD.push_back(backwardTracksEta);
-        oldEtaTracksBackwardFMD.erase(oldEtaTracksBackwardFMD.begin());
-        oldMultiplicityTracksBackwardFMD.push_back(backwardTracksMult);
-        oldMultiplicityTracksBackwardFMD.erase(oldMultiplicityTracksBackwardFMD.begin());
+            if (static_cast<int>(oldPhiTracksTPCvector[ptNumber][centralityIndex].size()) > numberOlderEventsToSave) {
+                oldPhiTracksTPCvector[ptNumber][centralityIndex].erase(oldPhiTracksTPCvector[ptNumber][centralityIndex].begin());
+                oldEtaTracksTPCvector[ptNumber][centralityIndex].erase(oldEtaTracksTPCvector[ptNumber][centralityIndex].begin());
+            }
+        }
 
+        oldPhiTracksBackwardFMDvector[0][centralityIndex].push_back(backwardTracksPhi);    
+        oldEtaTracksBackwardFMDvector[0][centralityIndex].push_back(backwardTracksEta);
+        oldMultiplicityTracksBackwardFMDvector[0][centralityIndex].push_back(backwardTracksMult);
+
+
+        if (static_cast<int>(oldPhiTracksBackwardFMDvector[0][centralityIndex].size()) > numberOlderEventsToSave) {
+            oldPhiTracksBackwardFMDvector[0][centralityIndex].erase(oldPhiTracksBackwardFMDvector[0][centralityIndex].begin());
+            oldEtaTracksBackwardFMDvector[0][centralityIndex].erase(oldEtaTracksBackwardFMDvector[0][centralityIndex].begin());
+            oldMultiplicityTracksBackwardFMDvector[0][centralityIndex].erase(oldMultiplicityTracksBackwardFMDvector[0][centralityIndex].begin());
+
+        }
+        
+    
 
      
     } //Event-loop end  
 
 
+    
 
     //Returns the results
-    std::vector<TH2D> returnVector;
-    returnVector.push_back(histogramForward*(1.0/approvedTPCTracksGlobal));
-    returnVector.push_back(histogramBackward*(1.0/approvedTPCTracksGlobal));
-    returnVector.push_back(histogramBackToBack*(1.0/approvedForwardFMDTracksGlobal));
-    returnVector.push_back(backgroundForward);
-    returnVector.push_back(backgroundBackward);
-    returnVector.push_back(backgroundBackToBack);
+    std::vector<std::vector<std::vector<TH2D>>> returnVector;
+    returnVector.push_back(forwardVector);
+    returnVector.push_back(backwardVector);
+    returnVector.push_back(backToBackVector);
+    returnVector.push_back(forwardBackgroundVector);
+    returnVector.push_back(backwardBackgroundVector);
+    returnVector.push_back(backToBackBackgroundVector);
+
+    //To avoid division by 0 errors
+    for (int ptNumber = 0; ptNumber < numberOfEntriesPt -1 ; ptNumber++) {
+        for (int centralityNumber = 0; centralityNumber < numberOfEntriesCentrality -1 ; centralityNumber++) {
+            if (eventNumbers[ptNumber][centralityNumber] == 0) {
+                eventNumbers[ptNumber][centralityNumber] = 1;
+            }
+
+            if (eventNumbersFMD[0][centralityNumber] == 0) {
+                eventNumbersFMD[0][centralityNumber] = 1;
+            }
+
+        }
+    }
+    auto returnTuple = std::make_tuple(returnVector, eventNumbers, eventNumbersFMD);
 
     dataFile.Close();
     delete event;
@@ -916,7 +991,9 @@ std::vector<TH2D> storeInHist::loadHistogram(std::string pathToFile, Short_t cut
     delete fmdTrack;
 
 
-    return returnVector;
+
+
+    return returnTuple;
 
 
 }
