@@ -2,11 +2,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <thread>
-#include <future>
-#include <mutex>
-
-
 
 //Other
 #include "AliLWUtils.h"
@@ -16,33 +11,38 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TObject.h>
-#include <TRint.h>
-#include <TApplication.h>
 #include <TBranch.h>
-#include <TGraph.h>
-#include <TCanvas.h>
-#include <TH1D.h>
-#include <TH2D.h>
 #include <TClonesArray.h>
-#include <TMath.h>
 
 
-//All this does is return the number of events stored in a file
+/* Purpose:
+The only purpose of this program is to give the bash script
+runProgram.sh the number of entries (events) in a given 
+file so that it may properly divide the intervals
+that the readData.cpp file will handle.
+*/
 
 int main(int argc, char** argv) {
-
+    //Reads in input data
     std::string pathToFile = argv[1];
+
+    //Reads in the file
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
     Int_t dataCount = dataTree->GetEntries();
     dataFile.Close();
+
+
+    //Returns the value to the bash script
     std::cout << dataCount << std::endl;
     //return dataCount;
     
-    
 
 
-
+    //Deliberately not using static_cast. I do not want 
+    //to turn off compiler warnings about
+    //unused variables but this is actually 
+    //supposed to be discarded.
     (void)argc;
 }
     

@@ -1,32 +1,32 @@
-#!/bin/bash 
+#!/bin/bash
 
-pids="" #Process id:s so that we can wait for all to finish
+pids="" #Stores active process id:s so that we can wait for all to finish
 maxcores=$2
 fileextension=".root"
 
 #Makes sure there is a new empty folder
 rm -rfd processedData
-rm -rfd "$1/temp"
+rm -rfd "temp"
 mkdir processedData
-mkdir "${1}/temp"
-#mkdir -p  processedData/disk/DataSets_PbPb/TPCFMDTrees/LHC15o/WithFMD/
+mkdir temp
+mkdir -p  processedData/disk/DataSets_PbPb/TPCFMDTrees/LHC15o/WithFMD/ #For backwards compatiblity
 
-
+#Stores a list of all files the directory to be read in ascending file size order
+#so that some files may be used while waiting for program to finish
 ls -S ${1}*.root > fileListDescending.txt
 tac fileListDescending.txt > fileListAscending.txt
 rm fileListDescending.txt
 
 
-
-#Starts the reading in of each file
+#Starts the reading in of each files 
 for entry in $(cat fileListAscending.txt); do
     echo "Starting process for $entry"
-    echo $(date)
+    echo $(date) #Prints start time
     numberOfEvents=$(./entries $entry)
     eventsPerCore=$((numberOfEvents / maxcores))
 
     for task in $(seq 1 $maxcores); do
-        newfolder="${1}temp"
+        newfolder="temp"
         filename="${entry#"$1"}"
         filename="${filename%".root"}"
         newname="${newfolder}/${filename}part${task}.root"
@@ -50,7 +50,7 @@ for entry in $(cat fileListAscending.txt); do
     done
 
     for task in $(seq 1 $maxcores); do
-        newfolder="${1}temp"
+        newfolder="temp"
         filename="${entry#"$1"}"
         filename="${filename%".root"}"
         newname="${newfolder}/${filename}part${task}.root"
@@ -58,10 +58,13 @@ for entry in $(cat fileListAscending.txt); do
 
     done
 
-    echo $(date)
+    echo $(date) #Prints finish time
 
 
 done
 
-#rm fileListAscending.txt
+
+rm fileListAscending.txt
 echo "All files have now been processed"
+
+

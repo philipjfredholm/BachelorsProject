@@ -1,6 +1,6 @@
 #include "../include/storeInHist.h"
 
-ClassImp(storeInHist);
+ClassImp(storeInHist); //For ROOT compatibility
 
 
 //Getters and Setters
@@ -57,7 +57,9 @@ const std::vector<std::vector<int>> storeInHist::getEventNumberListFMD() {
 }
 
 
+
 //Methods
+    //Various methods to save space later when many correlations have to be calculated
 void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Double_t>& phi1, const std::vector<Double_t>& eta1,
                                   const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
                                   const std::vector<Int_t>& mult1, const std::vector<Int_t>& mult2) {
@@ -178,8 +180,9 @@ void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& 
 
 
 
+    //Adds class instances of storeInHist, in hindsight maybe I should had use operator+ instead
 void storeInHist::addHistograms(storeInHist secondHistogram) {
-    if (this->_initialised == 0) {
+    if (this->_initialised == 0) { //For compatibility with the dummy default constructor that is implmented later
         //Raw
         this->_storedForwardList = secondHistogram.getForwardHistograms();
         this->_storedBackwardList = secondHistogram.getBackwardHistograms();
@@ -231,10 +234,9 @@ void storeInHist::addHistograms(storeInHist secondHistogram) {
         std::vector<std::vector<TH2D>> secondBackToBackProcessed = secondHistogram.getBackToBackProcessed();
    
 
+        //Unfortunately I did not get std::transform() (from include <algorithm>) to work
+        //for element wise addition of nested vectors to work so I go with a nested for loop.
         for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
-            //std::transform(this->_eventNumberList[ptNumber].begin(),
-              //             this->_eventNumberList[ptNumber].end(), secondEventNumberList[ptNumber].begin(), results[ptNumber].begin(), std::plus<int>());
-
 
             int numberOfEntries = static_cast<int>(this->_storedForwardList[ptNumber].size());
             for (int centralityNumber = 0 ; centralityNumber < numberOfEntries; centralityNumber++) {
@@ -245,7 +247,7 @@ void storeInHist::addHistograms(storeInHist secondHistogram) {
                 this->_storedForwardList[ptNumber][centralityNumber].Add(&secondForwardHistogramCopy[ptNumber][centralityNumber]);
                 this->_storedBackwardList[ptNumber][centralityNumber].Add(&secondBackwardHistogramCopy[ptNumber][centralityNumber]);
                 
-                //Combinatorial and defficiency background
+                //Combinatorial and defficiency background (event mixing)
                 this->_noCorrelationForwardList[ptNumber][centralityNumber].Add(&secondForwardBackgroundCopy[ptNumber][centralityNumber]);
                 this->_noCorrelationBackwardList[ptNumber][centralityNumber].Add(&secondBackwardBackgroundCopy[ptNumber][centralityNumber]);
                 
@@ -280,6 +282,7 @@ void storeInHist::addHistograms(storeInHist secondHistogram) {
 }
 
 
+    //Stores the various hitograms in a file for later read-in
 void storeInHist::storeHistogramInFile() {
     //Sets the new filename
     const std::string filename = _pathToFile.substr(_pathToFile.find_last_of("/")+1, _pathToFile.length());
@@ -324,11 +327,15 @@ void storeInHist::storeHistogramInFile() {
 
 }
 
+
+
+    //Performs a normalisation w.r.t event mixing and number of tracks 
+    //for the raw data and stores the results in a separate member variable.
+    //See the general explanation in the readme file for why [0] instead of [ptIndex]
+    //is used in some places
 void storeInHist::loadProcessed() {
     if (this->_initialised == 0) {
-        //Just for debugging, if the code was for public use the 
-        //errors should be using std::throw
-        std::cout << "Error: Trying to process unloaded histograms" << std::endl;
+        throw(std::logic_error("Error: Trying to process unloaded histograms"));
     }
 
     std::vector<std::vector<TH2D>> histogramForward = this->getForwardHistograms();
@@ -370,7 +377,7 @@ void storeInHist::loadProcessed() {
             
 
             int tpcTracksNormalisation = this->_eventNumberList[ptNumber][centralityNumber];
-            int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber];
+            int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; //The [0] is intentional
             double both = tpcTracksNormalisation*fmdTracksNormalisation;
             double fmdSquare = fmdTracksNormalisation*fmdTracksNormalisation;
             (void)both;
@@ -382,13 +389,13 @@ void storeInHist::loadProcessed() {
             //Stores the processed histograms
 
             if (ptNumber == 0) {
-                Double_t maxValueBackToBack = histogramBackToBackBackground[0][centralityNumber].GetMaximum();
+                Double_t maxValueBackToBack = histogramBackToBackBackground[ptNumber][centralityNumber].GetMaximum();
                 
 
-                TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground[0][centralityNumber];
-                histogramBackToBack[0][centralityNumber].Divide(&normalisedBackToBackBackground);
+                TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground[ptNumber][centralityNumber];
+                histogramBackToBack[ptNumber][centralityNumber].Divide(&normalisedBackToBackBackground);
   
-                processedBackToBack[0].push_back(histogramBackToBack[0][centralityNumber]*(1.0/fmdSquare)); 
+                processedBackToBack[ptNumber].push_back(histogramBackToBack[ptNumber][centralityNumber]*(1.0/fmdSquare)); 
 
             }
 
@@ -413,7 +420,7 @@ void storeInHist::loadProcessed() {
 //Constructors
 
 
-//Dummy default constructor since the default constructor is taken by inheritance from TObject
+    //Dummy default constructor since the default constructor is taken by inheritance from TObject
 storeInHist::storeInHist(Int_t number) {
     this->_initialised = 0;
     this->_pathToFile = "";
@@ -422,7 +429,7 @@ storeInHist::storeInHist(Int_t number) {
 }
 
 
-//Initialisation by reading a file
+    //Initialisation by reading a file
 storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
 
@@ -479,7 +486,7 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
 
 
 
-//Actual Constructor
+    //Primary Constructor
 storeInHist::storeInHist(std::string pathToFile, Short_t cutOption, 
                                                     Double_t centralityMin, Double_t centralityMax,
                                                     Double_t ptMin, Double_t ptMax,
@@ -492,18 +499,27 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
     Int_t dataCount = dataTree->GetEntries();
     dataFile.Close();
     if (stop > dataCount) {
-        stop = dataCount;
+        stop = dataCount; //To avoid segmentation errors
+        throw(std::invalid_argument("The stop number cannot be greater than the number of events. Please compile entries.cpp to check the number of entries"));
+    }
+
+    if (start < 0) {
+        start = 0;
+        throw(std::invalid_argument("The start number cannot be smaller than 0"));
+
     }
     
 
-    //loadHistogram creates the three histograms that are wanted. Separate method as it is very lengthy.
-    std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector<int>>, std::vector<std::vector<int>> > returnVector = loadHistograms(pathToFile, cutOption,
-                                                      centralityMin, centralityMax,
-                                                      ptMin, ptMax,
-                                                      etaMin, etaMax,
-                                                      countsPhi, countsEta,
-                                                      start, stop);
-    
+    //loadHistogram creates the histograms that are wanted for the different cases. See the readme file for
+    //a more detailed explanation. It is a separate method as it is very long and involved.
+    std::tuple< std::vector<std::vector<std::vector<TH2D>>>, 
+        std::vector<std::vector<int>>, std::vector<std::vector<int>> > returnVector = loadHistograms(pathToFile, cutOption,
+                                                                                                    centralityMin, centralityMax,
+                                                                                                    ptMin, ptMax,
+                                                                                                    etaMin, etaMax,
+                                                                                                    countsPhi, countsEta,
+                                                                                                    start, stop);
+                                                    
 
     
 
@@ -521,7 +537,8 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 
     
     this->_initialised = 1;
-    this->loadProcessed(); //This needs to go after _initialised is set to 1 since loadProcessed() checks the initialisation status.
+    this->loadProcessed(); //This needs to go after _initialised is set to 1 
+                           //since loadProcessed() checks the initialisation status.
     storeHistogramInFile();
 
 
@@ -530,7 +547,10 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 
 
 
-//Helper-method to a constructor to read in the data properly into the correct histograms
+//This is the main work horse of the program. It reads  in all of the desired histograms as well
+//as the number of tracks. See the comments in readData.cpp if you want to know what the arguments do.
+//See the readme file for an actual explanation of what is going on, since it is somewhat involved
+//I will not put an explanation as inline comments.
 std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector<int>>, std::vector<std::vector<int>> > storeInHist::loadHistograms(std::string pathToFile, Short_t cutOption, 
                                             Double_t centralityMin, Double_t centralityMax,
                                             Double_t ptMin, Double_t ptMax,
@@ -540,8 +560,12 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
     //Parameters                                      
     Int_t numberOlderEventsToSave = 5;
-    (void)cutOption; //outdated variable
+    (void)cutOption; //outdated variable, left in case it should be reimplemented later. Deliberaltely not using static_cast
+                    //as it is supposed to be discarded.
 
+    
+    //If there was more time these intervals should probably be determined by an argument
+    //given in readData.cpp.
     std::vector<Double_t> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6}; //{0.2, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6
     if (ptMin < startOfPtIntervals[0]) {
         ptMin = startOfPtIntervals[0];
@@ -554,9 +578,10 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     int numberOfEntriesCentrality = static_cast<int>(startOfCentralityIntervals.size());
     int numberOfEntriesPt = static_cast<int>(startOfPtIntervals.size());
     
-    //Sets up the correct structures 
+    //Sets up the correct structures of the vectors holding the data for the
+    //various cases so that they may be handled more easily later.
 
-    //-Histograms
+        //Data to be stored
     std::vector<std::vector<TH2D>> forwardVector;
     std::vector<std::vector<TH2D>> backwardVector;
     std::vector<std::vector<TH2D>> backToBackVector;
@@ -567,12 +592,12 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
     std::vector<std::vector<int>> eventNumbers;
     std::vector<std::vector<int>> eventNumbersFMD;
-    std::vector<int> eventNumbersPlaceHolder;
-    
+
+    std::vector<int> eventNumbersPlaceHolder;  
     std::vector<TH2D> placeHolderVector;
     TH2D placeHolderHistogram("histogram", "Counts", countsPhi, 0, 2*TMath::Pi(), countsEta, etaMin, etaMax);
 
-    //-Event Mixing
+        //Things needed for the event mixing
     std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldPhiTracksTPCvector;
     std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldEtaTracksTPCvector;
     std::vector<std::vector<std::vector<std::vector<Double_t>>>> oldPhiTracksBackwardFMDvector;
@@ -599,24 +624,29 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     std::vector<std::vector<Double_t>> tracksPhiTPCvectorPlaceHolder;
     std::vector<std::vector<Double_t>> tracksEtaTPCvectorPlaceHolder;
 
-    std::vector<Double_t> forwardTracksPhi;
-    forwardTracksPhi.reserve(500);
-    std::vector<Double_t> backwardTracksPhi;
-    backwardTracksPhi.reserve(500);
-    std::vector<Double_t> forwardTracksEta;
-    forwardTracksEta.reserve(5000);
-    std::vector<Double_t> backwardTracksEta; 
-    backwardTracksEta.reserve(500);
-    std::vector<Int_t> forwardTracksMult;
-    forwardTracksMult.reserve(500);
-    std::vector<Int_t> backwardTracksMult;
-    backwardTracksMult.reserve(500);
+    //To avoid excessive copying of the same data over and over again which takes time,
+    //I predefine the length of the vectors to somewhat above what the largest number of tracks seem to be
+    //in the FMD and TPC respectively
+    int reserveNumberFMD = 500;
+    int reserveNumberTPC = 150000;
 
+    std::vector<Double_t> forwardTracksPhi;
+    std::vector<Double_t> backwardTracksPhi;
+    std::vector<Double_t> forwardTracksEta;
+    std::vector<Double_t> backwardTracksEta; 
+    std::vector<Int_t> forwardTracksMult;
+    std::vector<Int_t> backwardTracksMult;
+    forwardTracksPhi.reserve(reserveNumberFMD);
+    backwardTracksPhi.reserve(reserveNumberFMD);
+    forwardTracksEta.reserve(reserveNumberFMD);
+    backwardTracksEta.reserve(reserveNumberFMD);
+    forwardTracksMult.reserve(reserveNumberFMD);
+    backwardTracksMult.reserve(reserveNumberFMD);
 
     std::vector<Double_t> tracksPhiTPC;
-    tracksPhiTPC.reserve(150000);
     std::vector<Double_t> tracksEtaTPC;
-    tracksEtaTPC.reserve(150000);
+    tracksPhiTPC.reserve(reserveNumberTPC);   
+    tracksEtaTPC.reserve(reserveNumberTPC);
     
 
     
@@ -634,7 +664,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
         eventNumbers.push_back(eventNumbersPlaceHolder);
 
-        //--Current event
+
         if (ptNumber == 0) { //There are no pT cuts in the fmd:s, structure is kept for consistency
             backToBackVector.push_back(placeHolderVector);
             backToBackBackgroundVector.push_back(placeHolderVector);
@@ -647,7 +677,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
 
 
-        for (int centralityNumber = 0 ; centralityNumber < numberOfEntriesCentrality -1; centralityNumber++) { //The last interval is 5-6, hence the -1 
+        for (int centralityNumber = 0 ; centralityNumber < numberOfEntriesCentrality -1; centralityNumber++) { //-1 is intentional
 
             forwardVector[ptNumber].push_back(placeHolderHistogram);
             backwardVector[ptNumber].push_back(placeHolderHistogram);
@@ -683,6 +713,10 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     }
     
 
+
+
+
+
     //Opens the data
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
@@ -703,7 +737,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     AliLWTPCTrack* currentTrackTPC;
     AliLWFMDTrack* currentTrackFMD;
 
-
+    //Variables for keeping track of which category data is to be saved to
     int centralityIndex;
     int ptIndex;
 
@@ -718,12 +752,10 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     Double_t pT; //Tranvsverse momentum
     
 
-
     //FMD-variables
     Double_t phiValFMD; //For TPC-FMD correlations
     Double_t etaValFMD;
     Int_t fmdMultiplicity;
-
 
     
     //Values to be stored in the histograms
@@ -731,16 +763,18 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     Double_t phiDiff;
 
 
+
+
+
+
+
     //Event-loop
-    
     for (Int_t eventNumber = start; eventNumber < stop; eventNumber++) {
-        
-        //Reads in the tracks for an event
+        //Reads in the data for the event
         dataTree->GetEntry(eventNumber);
 
         
-
-        //Determines which interavl the centrality belongs to and skips it if it isn't wanted.     
+        //Determines which interval the centrality belongs to and skips it if it isn't wanted.     
         centrality = event->fCent;
         if ((centrality < centralityMin) || (centrality > centralityMax)) {
             continue;
@@ -755,28 +789,32 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
         }
 
         
+        //Clears data from previous events
         forwardTracksEta.clear();
         backwardTracksEta.clear();
         forwardTracksPhi.clear();
         backwardTracksPhi.clear();
         forwardTracksMult.clear();
         backwardTracksMult.clear();
-        for (int ptNumber = 0; ptNumber < numberOfEntriesPt - 1; ptNumber++) {
+        for (int ptNumber = 0; ptNumber < numberOfEntriesPt - 1; ptNumber++) { //-1 is intentional
             tracksPhiTPCvector[ptNumber][centralityIndex].clear();
             tracksEtaTPCvector[ptNumber][centralityIndex].clear();
         }
 
 
+        //Number of events to loop over in the FMD and TPC
         trackCountTPC = tpcTrack->GetEntries(); 
         trackCountFMD = fmdTrack->GetEntries();
-        //Loops through all tracks in the FMD
         
+
+        //FMD loop start
         for (Int_t fmdTrackNumber = 0; fmdTrackNumber < trackCountFMD; fmdTrackNumber++) {
             //Gets details about the track
             currentTrackFMD = static_cast<AliLWFMDTrack*>((*fmdTrack)[fmdTrackNumber]); 
             etaValFMD = currentTrackFMD->fEta;
 
-            //Cutting away data where the resolution is low
+            //Cutting away data where the resolution is low,
+            //if there was more time this should probably had been defined in readData.cpp
             if ((etaValFMD < -3.1) || (etaValFMD > -2)) {
                 if ((etaValFMD < 3.8) || (etaValFMD > 4.7)) {
                     if ((etaValFMD < 2.5) || (etaValFMD > 3.1)) {
@@ -786,7 +824,9 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
                 }
             }
 
-            fmdMultiplicity = currentTrackFMD->fMult;
+            //Reads in these values after doing the eta check to save time 
+            //if there are values which are skipped
+            fmdMultiplicity = currentTrackFMD->fMult; 
             phiValFMD = currentTrackFMD->fPhi;
 
             //Stores values for the forward and backward FMD-tracks.
@@ -803,9 +843,17 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
             }
 
 
-            
-            
-            
+            /*
+            The code grew sort of organically as more and more features had to be implemented.
+            Originally, there was no event mixing so I made a nested for loop of FMD and TPC
+            tracks. In the current implementation, tracks have to be saved anyhow since
+            they are needed in the event mixing, so the faster option would be to 'un-nest'
+            these loops and have both the TPC and event mixing in separate loops.
+            Since the event mixing is by far the biggest time sink, and since that would take equally
+            long unnested, I have not bothered with un-nesting the loops. If one were to write
+            it from scatch with all the hindsight, these loops should of course be written in an unnested
+            way as that would be much simpler.
+            */
             
             //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
             for (Int_t tpcTrackNumber = 0; tpcTrackNumber < trackCountTPC; tpcTrackNumber++) {
@@ -961,6 +1009,9 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
     
 
+
+
+
     //Returns the results
     std::vector<std::vector<std::vector<TH2D>>> returnVector;
     returnVector.push_back(forwardVector);
@@ -970,7 +1021,8 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     returnVector.push_back(backwardBackgroundVector);
     returnVector.push_back(backToBackBackgroundVector);
 
-    //To avoid division by 0 errors
+    //Sets the minimum number of track to 1 to avoid division by 0 errors later with having
+    //a lot of if statements in .loadProcessed()
     for (int ptNumber = 0; ptNumber < numberOfEntriesPt -1 ; ptNumber++) {
         for (int centralityNumber = 0; centralityNumber < numberOfEntriesCentrality -1 ; centralityNumber++) {
             if (eventNumbers[ptNumber][centralityNumber] == 0) {
@@ -983,6 +1035,8 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
         }
     }
+    
+    
     auto returnTuple = std::make_tuple(returnVector, eventNumbers, eventNumbersFMD);
 
     dataFile.Close();
@@ -991,9 +1045,8 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     delete fmdTrack;
 
 
-
-
     return returnTuple;
+
 
 
 }

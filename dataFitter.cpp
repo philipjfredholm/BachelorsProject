@@ -2,11 +2,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <thread>
-#include <future>
-#include <mutex>
 #include <filesystem>
-
+#include <exception>
 
 //Other
 #include "include/storeInHist.h"
@@ -28,43 +25,119 @@
 #include <TMath.h>
 
 
-Double_t ppHistogramValue(Double_t x) {
+/* Purpose:
+This program is intended to able to extract the the various flow harmonic from
+correlations taken from the lead-lead (PbPb) collisions by fitting them to Fourier harmonics
+and background from proton-proton (pp) collisions to account for non flow effects of 
+QCD.
+ */
 
-    return 1;
+
+
+int main(int argc, char **argv) {
+    //Argument Processing
+    std::string pathToFile = argv[1];
+    std::string ptIndexString = argv[2];
+    std::string centralityIndexString = argv[3]; 
+
+    int ptIndex = std::stoi(ptIndexString);
+    int centralityIndex = std::stoi(centralityIndexString);
+
+    //Creates the application
+    char myChar = 'a'; //ROOT requires argv but I do not want to give it.
+    char* myCharPtr = &myChar;
+    TRint app("app", 0, &myCharPtr);
+    TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
+
+
+
+
+    //Runs the application
+    canvas.Modified(); 
+    canvas.Update();
+    app.Run();
+
+
 }
 
 
-Double_t v2Extractor(Double_t* values, Double_t* parameters) {
-    /*
-    Possible Parameters:
-    pp-background
-    Fourier background
-    v_1, v_2, v_3, v_4 etc (Should v_1 be included?)
-    \Psi_{RP}
-    */
-    Double_t background = parameters[0]*ppHistogramValue(values[0]) 
-    Double_t ellipticFlow = parameters[1] *(1+parameters[2]*std::cos(2*values[0]) +parameters[3]*std::cos(3*values[]))
 
-    for (int k = 0; k < parameters.sizeof(); k++) {
-        ellipticFlow += parameters[k] * std::cos(k*values[0]);
-    }
+double v2ExtractorForward(double* values, double* parameters) {
+
+    double background = parameters[0]*ppHistogramValueForward(values[0]);
+    double ellipticFlow = parameters[1] *(1+parameters[2]*std::cos(2*values[0]) +parameters[3]*std::cos(3*values[]));
+
     
     return background+ellipticFlow;
 
+} 
+
+
+
+double ppHistogramValueForward(Double_t x, storeInHist myHistogram, int ptIndex, int centralityIndex) {
+    //Check that the input is valid
+    if ((x < 0) || (x >= 2*TMath::Pi())) {
+        throw(std::invalid_argument("The value must be between 0 and 2pi"));
+    }
+
+    //Read in histograms
+    std::vector<std::vector<TH2D>> ppBackgroundVector = myHistogram.getForwardProcessed();
+    TH2D ppBackground = ppBackgroundVector[ptIndex][centralityIndex];
+    TH1D phiProjection = *ppBackground.ProjectionX();
+
+    //Finds the correct value to return
+    int resultIndex = phiProjection.FindBin(x);
+    double returnValue = phiProjection.GetBinContent(resultIndex);
+
+
+
+
+    return returnValue;
 }
 
 
 
-int main() {
+double ppHistogramValueBackward(Double_t x, storeInHist myHistogram, int ptIndex, int centralityIndex) {
+    //Check that the input is valid
+    if ((x < 0) || (x >= 2*TMath::Pi())) {
+        throw(std::invalid_argument("The value must be between 0 and 2pi"));
+    }
 
-    
+    //Read in histograms
+    std::vector<std::vector<TH2D>> ppBackgroundVector = myHistogram.getBackwardProcessed();
+    TH2D ppBackground = ppBackgroundVector[ptIndex][centralityIndex];
+    TH1D phiProjection = *ppBackground.ProjectionX();
+
+    //Finds the correct value to return
+    int resultIndex = phiProjection.FindBin(x);
+    double returnValue = phiProjection.GetBinContent(resultIndex);
 
 
 
 
-
-
-
-
-
+    return returnValue;
 }
+
+
+
+double ppHistogramValueBackToBack(Double_t x, storeInHist myHistogram, int ptIndex, int centralityIndex) {
+    //Check that the input is valid
+    if ((x < 0) || (x >= 2*TMath::Pi())) {
+        throw(std::invalid_argument("The value must be between 0 and 2pi"));
+    }
+
+    //Read in histograms
+    std::vector<std::vector<TH2D>> ppBackgroundVector = myHistogram.getBackToBackProcessed();
+    TH2D ppBackground = ppBackgroundVector[ptIndex][centralityIndex];
+    TH1D phiProjection = *ppBackground.ProjectionX();
+
+    //Finds the correct value to return
+    int resultIndex = phiProjection.FindBin(x);
+    double returnValue = phiProjection.GetBinContent(resultIndex);
+
+
+
+
+    return returnValue;
+}
+
