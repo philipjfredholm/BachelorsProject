@@ -58,21 +58,42 @@ int main(int argc, char **argv) {
         //The number '0' in 'myHistogram(0)' is random, I needed to change the signature since 
         //the inheritance from TObject already does a default constructor and another default constructor
         // is needed here.
-    storeInHist myHistogram(0); 
-    for (const auto& file : std::filesystem::directory_iterator(pathToFile)) {
-        std::string filename = file.path();
-        if (filename == "totalDataProcessed.root") { 
-            //A file is later stored with this name and this avoids double counting
-            continue;
-        }
-        storeInHist dummyHistogram (file.path());
-        myHistogram.addHistograms(dummyHistogram);
+
+    
+
+    storeInHist* myHistogram = new storeInHist(0);
+
+    if (std::filesystem::exists("totalDataProcessed.root")) {
+        storeInHist* myHistogram2 = new storeInHist("totalDataProcessed.root");
+        *myHistogram = *myHistogram2; 
+        delete myHistogram2;
+
+    } else {
+        for (const auto& file : std::filesystem::directory_iterator(pathToFile)) {
+            std::string filename = file.path();
+            if (filename == "totalDataProcessed.root") { 
+                //A file is later stored with this name and this avoids double counting
+                continue;
+            }
+
+            //Empties unused data to save RAM
+            storeInHist dummyHistogram {filename}; 
+
+            myHistogram->addHistograms(dummyHistogram);
 
 
-    } 
+
+
+        } 
+    }
+
+
+
+
+
 
     //Stores the merged read in data
-    myHistogram.setStorageName("totalData");
+    myHistogram->setStorageName("totalData");
         //All cases have stored data with normalised values after their
         // respective event mixings have been accounted for, but this is just to
         //be able to debug individual files. In order to get the proper statistics,
@@ -80,14 +101,14 @@ int main(int argc, char **argv) {
         //measured data and the event mixing have all been added up, only then
         //can the actual normalisation take place properly.
         //.loadProcessed() is the member function to do this
-    myHistogram.loadProcessed(); 
-    myHistogram.storeHistogramInFile();
+    myHistogram->loadProcessed(); 
+    myHistogram->storeHistogramInFile();
 
 
 
     //Checks which plotting option has been given
     if (drawOption == "forward") { //ForwardFMD-TPC correlations
-        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardHistograms();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram->getForwardHistograms();
         TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         histogramForward.Draw(drawStyle.c_str());
 
@@ -99,7 +120,7 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "forwardBackground") { //ForwardFMD-TPC event mixing
-        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram->getForwardBackgrounds();
         TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         histogramForward.Draw(drawStyle.c_str());
 
@@ -111,7 +132,7 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backward") { //BackwardFMD-TPC correlations
-        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardHistograms();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram->getBackwardHistograms();
         TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
         histogramBackward.Draw(drawStyle.c_str());
 
@@ -122,7 +143,7 @@ int main(int argc, char **argv) {
     }
 
     if (drawOption == "backwardBackground") { //BackwardFMD-TPC event mixing
-        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram->getBackwardBackgrounds();
         TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
         histogramBackward.Draw(drawStyle.c_str());
 
@@ -135,7 +156,7 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "backToBack") { //ForwardFMD-BackwardFMD correlations
-        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackHistograms();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram->getBackToBackHistograms();
         TH2D histogramBackToBack = histogramBackToBackvector[ptRegion][centralityRegion];
         histogramBackToBack.Draw(drawStyle.c_str());
 
@@ -147,7 +168,7 @@ int main(int argc, char **argv) {
 
 
     if (drawOption == "backToBackBackground") { //ForwardFMD-BackwardFMD event mixing
-        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram->getBackToBackBackgrounds();
         TH2D histogramBackToBack = histogramBackToBackvector[ptRegion][centralityRegion];
         histogramBackToBack.Draw(drawStyle.c_str());
         
@@ -169,9 +190,9 @@ int main(int argc, char **argv) {
 
     if (drawOption == "all") { //Plots all the different correlations, amplitudes may be skewed due to having different
                                 //number of tracks
-        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardHistograms();
-        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardHistograms();
-        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackHistograms();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram->getForwardHistograms();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram->getBackwardHistograms();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram->getBackToBackHistograms();
 
         TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
@@ -194,9 +215,9 @@ int main(int argc, char **argv) {
 
     if (drawOption == "allBackground") {//Plots all the different event mixings, amplitudes may be skewed due to having different
                                         //number of tracks
-        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardBackgrounds();
-        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardBackgrounds();
-        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackBackgrounds();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram->getForwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram->getBackwardBackgrounds();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram->getBackToBackBackgrounds();
         
         TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
@@ -226,10 +247,10 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed()
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram.getForwardProcessed();
-        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram.getBackwardProcessed();
-        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram.getBackToBackProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramForwardvector = myHistogram->getForwardProcessed();
+        std::vector<std::vector<TH2D>> histogramBackwardvector = myHistogram->getBackwardProcessed();
+        std::vector<std::vector<TH2D>> histogramBackToBackvector = myHistogram->getBackToBackProcessed();
 
         TH2D histogramForward = histogramForwardvector[ptRegion][centralityRegion];
         TH2D histogramBackward = histogramBackwardvector[ptRegion][centralityRegion];
@@ -254,8 +275,8 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed()
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getForwardProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getForwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
         
         
@@ -274,8 +295,8 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed()        
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackwardProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
         
         histogram.Draw(drawStyle.c_str());
@@ -292,8 +313,8 @@ int main(int argc, char **argv) {
 
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed()        
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackToBackProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackToBackProcessed();
         //The FMD:s have no pT-data (pT = transverse momentum), so all pT:s 
         //are in the same region and hence the [0] index. Nesting the data in another vector 
         //anyhow is just for purposes of consistency
@@ -317,11 +338,13 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getForwardProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getForwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
+
         TH1D phiProjection = *histogram.ProjectionX();
+
         
         
         phiProjection.SetTitle("TPC-ForwardFMD");
@@ -342,8 +365,8 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackwardProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
         TH1D phiProjection = *histogram.ProjectionX();
@@ -363,8 +386,8 @@ int main(int argc, char **argv) {
         
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
-        myHistogram.loadProcessed();
-        std::vector<std::vector<TH2D>> histogramvector = myHistogram.getBackToBackProcessed();
+        myHistogram->loadProcessed();
+        std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackToBackProcessed();
         //The FMD:s have no pT-data (pT = transverse momentum), so all pT:s 
         //are in the same region and hence the [0] index. Nesting the data in another vector 
         //anyhow is just for purposes of consistency
@@ -381,6 +404,7 @@ int main(int argc, char **argv) {
 
     }
 
+    delete myHistogram;
 
     (void)argc;
 

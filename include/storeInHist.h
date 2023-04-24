@@ -22,7 +22,7 @@
 #include <TClonesArray.h>
 
 
-class storeInHist : TObject {
+class storeInHist {
     private:
         //Member Variablies
         std::string _pathToFile; //Where the file is to be stored if storeHistogramInFile() is called
@@ -119,6 +119,23 @@ class storeInHist : TObject {
         const std::vector<std::vector<int>> getEventNumberList();
         const std::vector<std::vector<int>> getEventNumberListFMD();
 
+        void setForwardHistograms(std::vector<std::vector<TH2D>> newVector);
+        void setBackwardHistograms(std::vector<std::vector<TH2D>> newVector);
+        void setBackToBackHistograms(std::vector<std::vector<TH2D>> newVector);
+
+        void setForwardBackgrounds(std::vector<std::vector<TH2D>> newVector);
+        void setBackwardBackgrounds(std::vector<std::vector<TH2D>> newVector);
+        void setBackToBackBackgrounds(std::vector<std::vector<TH2D>> newVector);
+
+        void setForwardProcessed(std::vector<std::vector<TH2D>> newVector);
+        void setBackwardProcessed(std::vector<std::vector<TH2D>> newVector);
+        void setBackToBackProcessed(std::vector<std::vector<TH2D>> newVector);
+
+        void setEventNumberList(std::vector<std::vector<int>> newVector);
+        void setEventNumberListFMD(std::vector<std::vector<int>> newVector);
+
+        
+
         //Setters
         void setStorageName(std::string location);
 
@@ -129,7 +146,8 @@ class storeInHist : TObject {
 
 
 
-        ClassDef(storeInHist, 1); //For ROOT compatibility
+
+        //ClassDef(storeInHist, 1); //For ROOT compatibility
         
 
 

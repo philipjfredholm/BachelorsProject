@@ -41,6 +41,9 @@ readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
+mergeSame: mergeSame.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o mergeSame mergeSame.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
+
 entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o entries entries.cpp AliLWUtils.o -lROOTlibs $(ROOT) -O3
 

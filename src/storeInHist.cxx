@@ -1,6 +1,6 @@
 #include "../include/storeInHist.h"
 
-ClassImp(storeInHist); //For ROOT compatibility
+//ClassImp(storeInHist); //For ROOT compatibility
 
 
 //Getters and Setters
@@ -55,6 +55,48 @@ const std::vector<std::vector<int>> storeInHist::getEventNumberList() {
 const std::vector<std::vector<int>> storeInHist::getEventNumberListFMD() {
     return this->_eventNumberListFMD;
 }
+
+
+
+
+void storeInHist::setForwardHistograms(std::vector<std::vector<TH2D>> newVector) {
+    this->_storedForwardList = newVector;
+}
+void storeInHist::setBackwardHistograms(std::vector<std::vector<TH2D>> newVector) {
+    this->_storedBackwardList = newVector;
+}
+void storeInHist::setBackToBackHistograms(std::vector<std::vector<TH2D>> newVector) {
+    this->_storedBackToBackList = newVector;
+}
+
+void storeInHist::setForwardBackgrounds(std::vector<std::vector<TH2D>> newVector) {
+    this->_noCorrelationForwardList = newVector;
+}
+void storeInHist::setBackwardBackgrounds(std::vector<std::vector<TH2D>> newVector) {
+    this->_noCorrelationBackwardList = newVector;
+}
+void storeInHist::setBackToBackBackgrounds(std::vector<std::vector<TH2D>> newVector) {
+    this->_noCorrelationBackToBackList = newVector;
+}
+
+void storeInHist::setForwardProcessed(std::vector<std::vector<TH2D>> newVector) {
+    this->_processedForwardList = newVector;
+}
+void storeInHist::setBackwardProcessed(std::vector<std::vector<TH2D>> newVector) {
+    this->_processedBackwardList = newVector;
+}
+void storeInHist::setBackToBackProcessed(std::vector<std::vector<TH2D>> newVector) {
+    this->_processedBackToBackList = newVector;
+}
+
+void storeInHist::setEventNumberList(std::vector<std::vector<int>> newVector) {
+    this->_eventNumberList = newVector;
+}
+void storeInHist::setEventNumberListFMD(std::vector<std::vector<int>> newVector) {
+    this->_eventNumberListFMD = newVector;
+}
+
+
 
 
 
@@ -286,7 +328,7 @@ void storeInHist::addHistograms(storeInHist secondHistogram) {
 void storeInHist::storeHistogramInFile() {
     //Sets the new filename
     const std::string filename = _pathToFile.substr(_pathToFile.find_last_of("/")+1, _pathToFile.length());
-    std::string storageLocation = "processedData/"+filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
+    std::string storageLocation = filename.substr(0, filename.find_last_of(".")) +"Processed"+ ".root"; 
 
     //Stores the histogram
     std::vector<std::vector<TH2D>>* histogramForwardPointer = &(this->_storedForwardList);
@@ -360,6 +402,7 @@ void storeInHist::loadProcessed() {
         if (ptNumber == 0) {
             processedBackToBack.push_back(placeHolderVector);
         }
+        
 
         int numberOfEntries = static_cast<int>(this->_storedForwardList[ptNumber].size());
         for (int centralityNumber = 0 ; centralityNumber < numberOfEntries; centralityNumber++) {
@@ -371,20 +414,28 @@ void storeInHist::loadProcessed() {
             TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground[ptNumber][centralityNumber];
             TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground[ptNumber][centralityNumber];
             
-
+         
             histogramForward[ptNumber][centralityNumber].Divide(&normalisedForwardBackground);
             histogramBackward[ptNumber][centralityNumber].Divide(&normalisedBackwardBackground);
+    
             
 
             int tpcTracksNormalisation = this->_eventNumberList[ptNumber][centralityNumber];
             int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; //The [0] is intentional
-            double both = tpcTracksNormalisation*fmdTracksNormalisation;
-            double fmdSquare = fmdTracksNormalisation*fmdTracksNormalisation;
-            (void)both;
-            (void)fmdSquare;
+            //double both = tpcTracksNormalisation*fmdTracksNormalisation;
+            //double fmdSquare = fmdTracksNormalisation*fmdTracksNormalisation;
 
-            processedForward[ptNumber].push_back(histogramForward[ptNumber][centralityNumber]*(1.0/both));
-            processedBackward[ptNumber].push_back(histogramBackward[ptNumber][centralityNumber]*(1.0/both));
+            TH2D forwardTemp = histogramForward[ptNumber][centralityNumber];
+            TH2D backwardTemp = histogramBackward[ptNumber][centralityNumber];
+            forwardTemp = forwardTemp*(1.0/tpcTracksNormalisation);
+            forwardTemp = forwardTemp*(1.0/fmdTracksNormalisation);
+            backwardTemp = backwardTemp*(1.0/tpcTracksNormalisation); //The numbers get too big if we multiply them together and start
+            backwardTemp = backwardTemp*(1.0/fmdTracksNormalisation); //becoming negative so this is necessary.
+
+
+
+            processedForward[ptNumber].push_back(forwardTemp);
+            processedBackward[ptNumber].push_back(backwardTemp);
 
             //Stores the processed histograms
 
@@ -394,8 +445,11 @@ void storeInHist::loadProcessed() {
 
                 TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground[ptNumber][centralityNumber];
                 histogramBackToBack[ptNumber][centralityNumber].Divide(&normalisedBackToBackBackground);
+                TH2D backToBackTemp = histogramBackToBack[ptNumber][centralityNumber];
+                backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
+                backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
   
-                processedBackToBack[ptNumber].push_back(histogramBackToBack[ptNumber][centralityNumber]*(1.0/fmdSquare)); 
+                processedBackToBack[ptNumber].push_back(backToBackTemp); 
 
             }
 
@@ -543,7 +597,6 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
 
 
 }
-
 
 
 
