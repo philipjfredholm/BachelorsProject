@@ -288,6 +288,7 @@ void storeInHist::addHistograms(storeInHist secondHistogram) {
                 //Raw
                 this->_storedForwardList[ptNumber][centralityNumber].Add(&secondForwardHistogramCopy[ptNumber][centralityNumber]);
                 this->_storedBackwardList[ptNumber][centralityNumber].Add(&secondBackwardHistogramCopy[ptNumber][centralityNumber]);
+
                 
                 //Combinatorial and defficiency background (event mixing)
                 this->_noCorrelationForwardList[ptNumber][centralityNumber].Add(&secondForwardBackgroundCopy[ptNumber][centralityNumber]);
@@ -414,9 +415,13 @@ void storeInHist::loadProcessed() {
             TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground[ptNumber][centralityNumber];
             TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground[ptNumber][centralityNumber];
             
+            //histogramForward[ptNumber][centralityNumber].Sumw2();
+            //histogramBackward[ptNumber][centralityNumber].Sumw2();
          
             histogramForward[ptNumber][centralityNumber].Divide(&normalisedForwardBackground);
             histogramBackward[ptNumber][centralityNumber].Divide(&normalisedBackwardBackground);
+
+
     
             
 
@@ -427,12 +432,12 @@ void storeInHist::loadProcessed() {
 
             TH2D forwardTemp = histogramForward[ptNumber][centralityNumber];
             TH2D backwardTemp = histogramBackward[ptNumber][centralityNumber];
+
             forwardTemp = forwardTemp*(1.0/tpcTracksNormalisation);
-            forwardTemp = forwardTemp*(1.0/fmdTracksNormalisation);
+            //forwardTemp = forwardTemp*(1.0/fmdTracksNormalisation);
             backwardTemp = backwardTemp*(1.0/tpcTracksNormalisation); //The numbers get too big if we multiply them together and start
-            backwardTemp = backwardTemp*(1.0/fmdTracksNormalisation); //becoming negative so this is necessary.
-
-
+            //backwardTemp = backwardTemp*(1.0/fmdTracksNormalisation); //becoming negative so this is necessary.
+ 
 
             processedForward[ptNumber].push_back(forwardTemp);
             processedBackward[ptNumber].push_back(backwardTemp);
@@ -445,9 +450,13 @@ void storeInHist::loadProcessed() {
 
                 TH2D normalisedBackToBackBackground = (1/maxValueBackToBack)*histogramBackToBackBackground[ptNumber][centralityNumber];
                 histogramBackToBack[ptNumber][centralityNumber].Divide(&normalisedBackToBackBackground);
+                //histogramBackToBack[ptNumber][centralityNumber].Sumw2();
                 TH2D backToBackTemp = histogramBackToBack[ptNumber][centralityNumber];
+      
                 backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
-                backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
+                //backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
+    
+                
   
                 processedBackToBack[ptNumber].push_back(backToBackTemp); 
 
@@ -509,6 +518,22 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     this->_eventNumberListFMD = *eventNumberListFMDPtr;
 
 
+    //Enables error propagation
+/*     for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
+        for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_storedForwardList[ptNumber].size()); centralityNumber++) {
+            this->_storedForwardList[ptNumber][centralityNumber].Sumw2();
+            this->_storedBackwardList[ptNumber][centralityNumber].Sumw2();
+            this->_storedBackToBackList[0][centralityNumber].Sumw2();
+
+            this->_noCorrelationForwardList[ptNumber][centralityNumber].Sumw2();
+            this->_noCorrelationBackwardList[ptNumber][centralityNumber].Sumw2();
+            this->_noCorrelationBackToBackList[0][centralityNumber].Sumw2();            
+
+        }
+    }
+ */
+
+
     //Old versions of the program did not save the processed histograms as member variables 
     // nor in the file. Not reading in processed histograms directly is for backwards compatibility.
     try {
@@ -519,6 +544,19 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
         this->_processedForwardList = *histogramForwardProcessed;
         this->_processedBackwardList = *histogramBackwardProcessed;
         this->_processedBackToBackList = *histogramBackToBackProcessed;
+
+        //Enables error propagation
+/*         for (int ptNumber = 0; ptNumber < static_cast<int>(this->_processedForwardList.size()); ptNumber++) {
+            for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_processedForwardList[ptNumber].size()); centralityNumber++) {
+                this->_processedForwardList[ptNumber][centralityNumber].Sumw2();
+                this->_processedBackwardList[ptNumber][centralityNumber].Sumw2();
+                this->_processedBackToBackList[0][centralityNumber].Sumw2();         
+
+           }
+        } */
+
+
+        
 
 
     } catch (...) {

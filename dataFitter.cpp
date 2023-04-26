@@ -64,7 +64,7 @@ double ppHistogramValue(Double_t x) {
 
 
 
-double v2Extractordouble* values, double* parameters) {
+double v2Extractor(double* values, double* parameters) {
 
     int numberOfHarmonics = sizeof(parameters)-2;
     double backgroundNumber = parameters[0]*ppHistogramValue(values[0]);
@@ -88,11 +88,10 @@ int main(int argc, char **argv) {
     //Argument Processing
     std::string pathToFile = argv[1];
     std::string pathToBackground = argv[2];
-/*     std::string ptIndexString = argv[3];
-    std::string centralityIndexString = argv[4]; 
-    int ptIndex = std::stoi(ptIndexString);
-    int centralityIndex = std::stoi(centralityIndexString);
- */
+
+    std::vector<double> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
+    std::vector<double> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6};
+
     //Creates the application
     char myChar = 'a'; //ROOT requires argv but I do not want to give it.
     char* myCharPtr = &myChar;
@@ -106,9 +105,6 @@ int main(int argc, char **argv) {
     dataHistograms.loadProcessed();
     backgroundHistograms.loadProcessed();
 
-    //std::vector<Double_t> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
-    //std::vector<Double_t> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6};
-    
 
     std::vector<std::vector<TH2D>> dataVectorForward = dataHistograms.getForwardProcessed();
     std::vector<std::vector<TH2D>> backgroundVectorForward = backgroundHistograms.getForwardProcessed();
@@ -117,65 +113,116 @@ int main(int argc, char **argv) {
     std::vector<std::vector<TH2D>> dataVectorBackToBack = dataHistograms.getBackToBackProcessed();
     std::vector<std::vector<TH2D>> backgroundVectorBackToBack = backgroundHistograms.getBackToBackProcessed();
 
-    std::vector<std::vector<double>> v2List;
 
 
+
+    //Vectors for storing the results    
+    std::vector<std::vector<double>> v2ForwardList;
+    std::vector<std::vector<double>> v2BackwardList;
+    std::vector<std::vector<double>> v2BackToBackList;
+
+    std::vector<std::vector<double>> v2ErrorForwardList;
+    std::vector<std::vector<double>> v2ErrorBackwardList;
+    std::vector<std::vector<double>> v2ErrorBackToBackList;
+
+    std::vector<double> placeHolder;
+
+
+
+    
+    //Defines the fitting function
     TF1 v2Finder("v2", v2Extractor, 0, 2*TMath::Pi()-0.0001, 4);
-    v2Finder.SetParNames("Background Amplitude", "Scaling", "v2", "v3", "v4", "v5");
+    v2Finder.SetParNames("Background Amplitude", "Scaling", "v2", "v3", "v4", "v5", "v6", "v7");
     v2Finder.SetParameter(2,0.5); //Initial Guess
 
 
-    data.GetXaxis()->CenterTitle(true);
-    data.GetYaxis()->CenterTitle(true);
-    data.GetXaxis()->SetTitle("#Delta #varphi");
-    data.GetYaxis()->SetTitle("Scaled Counts");
-    data.GetXaxis()->SetTitleSize(0.04);
-    data.GetYaxis()->SetTitleSize(0.04);
+    //Loops over all different cases
+    TH2D dataTemp;
+    TH2D backgroundTemp;
+    double v2;
+    double v2Error;
+    
+    for (int ptNumber = 0; ptNumber < static_cast<int>(dataVectorForward.size()); ptNumber++) {
+        v2ForwardList.push_back(placeHolder);
+        v2BackwardList.push_back(placeHolder);
 
-    data.SetTitle("#splitline{Shows the scaled down number of}{     counts as a function of #Delta#varphi}");
-    
-    gPad->SetGrid();
-    gStyle->SetTitleFontSize(0.04);
-    
-    
-    
+        v2ErrorForwardList.push_back(placeHolder);
+        v2ErrorBackwardList.push_back(placeHolder);
 
-    TLegend myLegend(0.62, 0.7, 0.82, 0.9);
-    myLegend.AddEntry(&data, "Measured Data", "l");
-    myLegend.AddEntry(&v2Finder, "Fit", "l");
-    myLegend.SetTextSize(0.03);
-    
+        if (ptNumber == 0) {
+            v2BackToBackList.push_back(placeHolder);
+            v2ErrorBackToBackList.push_back(placeHolder);
+        }
 
-    std::cout << "loop" << std::endl;
-    for (int centralityNumber = 0; centralityNumber < static_cast<int>(dataVectorForward[0].size())-2; centralityNumber++) {
-        for (int ptNumber = 0; ptNumber < static_cast<int>(dataVectorForward.size())-2; ptNumber++) {
-            TH2D dataTemp = dataVectorForward[ptNumber][centralityNumber];
-            TH2D backgroundTemp = backgroundVectorForward[ptNumber][0];
-    
+
+        for (int centralityNumber = 0; centralityNumber < static_cast<int>(dataVectorForward[0].size()); centralityNumber++) {  
+            //Forward
+            dataTemp = dataVectorForward[ptNumber][centralityNumber];
+            backgroundTemp = backgroundVectorForward[ptNumber][0];
             data = *dataTemp.ProjectionX();
             background = *backgroundTemp.ProjectionX();
             
-            data.Fit("v2", "RQ");
+            data.Fit("v2", "RQ0");
+            v2 = v2Finder.GetParameter(2);
+            v2Error = v2Finder.GetParError(2);
+        
 
+            v2ForwardList[ptNumber].push_back(v2);
+            v2ErrorForwardList[ptNumber].push_back(v2Error);
 
-            double v2 = v2Finder.GetParameter(2);
-            std::cout << "v2 is " << v2 << std::endl;
-            std::cout << "square root is" << std::sqrt(v2) << std::endl;
+            //Backward
+            dataTemp = dataVectorBackward[ptNumber][centralityNumber];
+            backgroundTemp = backgroundVectorBackward[ptNumber][0];
+            data = *dataTemp.ProjectionX();
+            background = *backgroundTemp.ProjectionX();
+            
+            data.Fit("v2", "RQ0");
+            v2 = v2Finder.GetParameter(2);
+            v2Error = v2Finder.GetParError(2);
+            
+
+            v2BackwardList[ptNumber].push_back(v2);
+            v2ErrorBackwardList[ptNumber].push_back(v2Error);
+
+            //BackToBack
+            if (ptNumber == 0 ) {
+    
+                dataTemp = dataVectorBackToBack[0][centralityNumber];
+                backgroundTemp = backgroundVectorBackToBack[ptNumber][0];
+                data = *dataTemp.ProjectionX();
+                background = *backgroundTemp.ProjectionX();
+                
+                data.Fit("v2", "RQ0");
+                v2 = v2Finder.GetParameter(2);
+                v2Error = v2Finder.GetParError(2);
+                
+
+                v2BackToBackList[ptNumber].push_back(v2);
+                v2ErrorBackToBackList[ptNumber].push_back(v2Error);
+            }
+
 
         }
     }
 
 
+    //Saves the data
+    TFile results("results.root", "RECREATE");
+    results.WriteObject(&v2ForwardList, "v2ForwardList");
+    results.WriteObject(&v2BackwardList, "v2BackwardList");
+    results.WriteObject(&v2BackToBackList, "v2BackToBackList");
+
+    results.WriteObject(&v2ErrorForwardList, "v2ErrorForwardList");
+    results.WriteObject(&v2ErrorBackwardList, "v2ErrorBackwardList");
+    results.WriteObject(&v2ErrorBackToBackList, "v2ErrorBackToBackList");
+
+    results.WriteObject(&startOfCentralityIntervals, "startOfCentralityIntervals");
+    results.WriteObject(&startOfPtIntervals, "startOfPtIntervals");
 
 
-    data.SetStats(0);
-    data.Draw();
-    myLegend.Draw();
-    
 
 
-
-
+    results.Close();
     //Runs the application
     canvas.Modified(); 
     canvas.Update();

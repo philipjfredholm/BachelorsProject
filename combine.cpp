@@ -367,6 +367,7 @@ int main(int argc, char **argv) {
         //purpose of .loadProcessed() 
         myHistogram->loadProcessed();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackwardProcessed();
+        std::cout << histogramvector[0].size() << std::endl;
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
         TH1D phiProjection = *histogram.ProjectionX();
