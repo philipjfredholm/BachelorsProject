@@ -28,6 +28,7 @@
 #include <TGraph.h>
 #include <TStyle.h>
 #include <TSystem.h>
+#include <TVirtualFitter.h>
 
 
 /* Purpose:
@@ -49,15 +50,9 @@ double ppHistogramValue(Double_t x) {
         throw(std::invalid_argument("The value must be between 0 and 2pi"));
     }
 
-
-
     //Finds the correct value to return
     int resultIndex = background.FindBin(x);
     double returnValue = background.GetBinContent(resultIndex);
-
-
-
-
 
     return returnValue;
 }
@@ -65,21 +60,52 @@ double ppHistogramValue(Double_t x) {
 
 
 double fitFunction(double* values, double* parameters) {
-
     int numberOfHarmonics = sizeof(parameters)-2;
     double backgroundNumber = parameters[0]*ppHistogramValue(values[0]);
     double ellipticFlow = 1 ;
+
     for (int harmonic = 2; harmonic < numberOfHarmonics; harmonic++) {
         ellipticFlow += 2*parameters[harmonic]*std::cos(harmonic*values[0]);
     }
+
     ellipticFlow *= parameters[1];
-
-
-    
+  
     return backgroundNumber+ellipticFlow;
-
 } 
 
+
+TH1D projectHistogram(TH2D histogram) {
+    TH1D returnHistogram("projectedPhi", "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
+    double numerator;
+    double denominator;
+    double errorFactor;
+
+    for (int phiBin = 1; phiBin <= histogram.GetNbinsX(); phiBin++) { //not 0 and < because of ROOT's bin convention
+        numerator = 0;
+        denominator = 0;
+        errorFactor = 0;
+
+        //Weighted average
+        for (int etaBin = 1; etaBin <= histogram.GetNbinsY(); etaBin++) {
+            if (histogram.GetBinContent(phiBin, etaBin) == 0) {
+                continue;
+            }
+            errorFactor = 1/std::pow(histogram.GetBinError(phiBin, etaBin)/histogram.GetBinContent(phiBin, etaBin), 2);
+            numerator += histogram.GetBinContent(phiBin, etaBin) * errorFactor;
+            denominator += errorFactor;
+            
+        }
+
+        if (denominator == 0) {continue;}
+        returnHistogram.SetBinContent(phiBin, numerator/denominator);
+        
+        returnHistogram.SetBinError(phiBin, std::sqrt(1/denominator)*returnHistogram.GetBinContent(phiBin));
+
+    }
+
+    return returnHistogram; 
+  
+}
 
 
 
@@ -103,6 +129,8 @@ int main(int argc, char **argv) {
     //Reads in the data
     storeInHist dataHistograms(pathToFile);
     storeInHist backgroundHistograms(pathToBackground);
+    dataHistograms.setErrors();
+    backgroundHistograms.setErrors();
     dataHistograms.loadProcessed();
     backgroundHistograms.loadProcessed();
 
@@ -117,11 +145,9 @@ int main(int argc, char **argv) {
     std::vector<std::vector<TH2D>> backgroundVectorBackToBack = backgroundHistograms.getBackToBackProcessed();
 
     
-    TH2D dataTemp = dataVectorForward[ptIndex][centralityIndex];
-    TH2D backgroundTemp = backgroundVectorForward[ptIndex][0];
-    
-    data = *dataTemp.ProjectionX();
-    background = *backgroundTemp.ProjectionX();
+    data = projectHistogram(dataVectorForward[ptIndex][centralityIndex]);
+    background = projectHistogram(backgroundVectorForward[ptIndex][0]);
+    std::cout <<  data.GetBinError(10)/data.GetBinContent(10)  << std::endl;
 
     // Necessary for plotting
     double dataMinimum = data.GetMinimum(); 
@@ -137,7 +163,6 @@ int main(int argc, char **argv) {
     gROOT->ForceStyle();
     gStyle->SetOptStat(0);
     dataCopy.SetFillColorAlpha(kBlue, 0.5);
-    
     
     data.GetXaxis()->CenterTitle(true);
     data.GetYaxis()->CenterTitle(true);
@@ -158,11 +183,8 @@ int main(int argc, char **argv) {
     protonBackground.SetTitle("protonBackground");
     protonBackground.SetLineColor(kGreen);
     
-    
-    
     gPad->SetGrid();
     gStyle->SetTitleFontSize(0.04);
-
 
     TGraph fourierBackground;
     fourierBackground.SetFillColorAlpha(kOrange, 0.2);
@@ -173,7 +195,7 @@ int main(int argc, char **argv) {
     fourierBackgroundv3.SetLineColor(kMagenta);
     
 
-
+  
     //Fitting
     TF1 fitFunctionROOT("fitFunctionROOT", fitFunction, 0.0001, 2*TMath::Pi()-0.0001, 4); // +- 0001 to avoid underflow and overflow bins
     TF1 fitFunctionROOTBackground("fitFunctionROOTBackground", fitFunction, 0.0001, 2*TMath::Pi()-0.0001, 4); // +- 0001 to avoid underflow and overflow bins
@@ -185,6 +207,9 @@ int main(int argc, char **argv) {
     fitFunctionROOT.SetParameter(1, 1); // Fourier harmonics initial guess
     fitFunctionROOT.SetParameter(2 ,0.0005); // v2 initial guess
     fitFunctionROOT.SetParameter(3, 0.0001); // v3 initial guess
+    fitFunctionROOT.SetParLimits(2, 0, 1);
+    fitFunctionROOT.SetParLimits(3, 0, 1);
+
  
     
     dataCopy.Fit("fitFunctionROOTBackground", "RQ0 same");

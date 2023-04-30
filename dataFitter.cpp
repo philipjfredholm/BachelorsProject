@@ -84,6 +84,39 @@ double v2Extractor(double* values, double* parameters) {
 
 
 
+TH1D projectHistogram(TH2D histogram) {
+    TH1D returnHistogram("projectedPhi", "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
+
+    double numerator;
+    double denominator;
+    double errorFactor = 1;
+
+
+    for (int phiBin = 1; phiBin <= histogram.GetNbinsX(); phiBin++) { //not 0 and < because of ROOT's bin convention
+        numerator = 0;
+        denominator = 0;
+
+        //Weighted average
+        for (int etaBin = 1; etaBin <= histogram.GetNbinsY(); etaBin++) {
+            errorFactor = std::pow(histogram.GetBinError(phiBin, etaBin), 2);
+            numerator += histogram.GetBinContent(phiBin, etaBin) * errorFactor;
+            denominator += errorFactor;
+            
+        }
+
+        returnHistogram.SetBinContent(phiBin, numerator/denominator);
+        returnHistogram.SetBinError(phiBin, std::sqrt(denominator));
+
+
+    }
+
+    return returnHistogram; 
+    
+}
+
+
+
+
 int main(int argc, char **argv) {
     //Argument Processing
     std::string pathToFile = argv[1];
@@ -102,6 +135,10 @@ int main(int argc, char **argv) {
     //Reads in the data
     storeInHist dataHistograms(pathToFile);
     storeInHist backgroundHistograms(pathToBackground);
+    dataHistograms.setErrors(); //Calls Sumw2 for all of the histograms.
+    backgroundHistograms.setErrors(); //This leads to printed error messages of the sum of weights structure 
+                                            //already having been created, but I was told to ignore this warning. 
+
     dataHistograms.loadProcessed();
     backgroundHistograms.loadProcessed();
 
@@ -112,7 +149,6 @@ int main(int argc, char **argv) {
     std::vector<std::vector<TH2D>> backgroundVectorBackward = backgroundHistograms.getBackwardProcessed();
     std::vector<std::vector<TH2D>> dataVectorBackToBack = dataHistograms.getBackToBackProcessed();
     std::vector<std::vector<TH2D>> backgroundVectorBackToBack = backgroundHistograms.getBackToBackProcessed();
-
 
 
 
@@ -134,6 +170,9 @@ int main(int argc, char **argv) {
     TF1 v2Finder("v2", v2Extractor, 0, 2*TMath::Pi()-0.0001, 4);
     v2Finder.SetParNames("Background Amplitude", "Scaling", "v2", "v3", "v4", "v5", "v6", "v7");
     v2Finder.SetParameter(2,0.5); //Initial Guess
+    v2Finder.SetParameter(2,0.05); //Initial Guess
+    v2Finder.SetParLimits(2, 0, 1);
+    v2Finder.SetParLimits(3, 0, 1);
 
 
     //Loops over all different cases
@@ -159,8 +198,8 @@ int main(int argc, char **argv) {
             //Forward
             dataTemp = dataVectorForward[ptNumber][centralityNumber];
             backgroundTemp = backgroundVectorForward[ptNumber][0];
-            data = *dataTemp.ProjectionX();
-            background = *backgroundTemp.ProjectionX();
+            data = projectHistogram(dataTemp);
+            background = projectHistogram(backgroundTemp);
             
             data.Fit("v2", "RQ0");
             v2 = v2Finder.GetParameter(2);
@@ -173,8 +212,8 @@ int main(int argc, char **argv) {
             //Backward
             dataTemp = dataVectorBackward[ptNumber][centralityNumber];
             backgroundTemp = backgroundVectorBackward[ptNumber][0];
-            data = *dataTemp.ProjectionX();
-            background = *backgroundTemp.ProjectionX();
+            data = projectHistogram(dataTemp);
+            background = projectHistogram(backgroundTemp);
             
             data.Fit("v2", "RQ0");
             v2 = v2Finder.GetParameter(2);
@@ -189,8 +228,8 @@ int main(int argc, char **argv) {
     
                 dataTemp = dataVectorBackToBack[0][centralityNumber];
                 backgroundTemp = backgroundVectorBackToBack[ptNumber][0];
-                data = *dataTemp.ProjectionX();
-                background = *backgroundTemp.ProjectionX();
+                data = projectHistogram(dataTemp);
+                background = projectHistogram(backgroundTemp);
                 
                 data.Fit("v2", "RQ0");
                 v2 = v2Finder.GetParameter(2);

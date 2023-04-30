@@ -143,6 +143,8 @@ class storeInHist {
         void addHistograms(storeInHist secondHistogram);
         void storeHistogramInFile();
         void loadProcessed();
+        void setErrors();
+        void setErrors0();
 
 
 

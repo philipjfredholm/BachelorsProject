@@ -41,6 +41,9 @@ readData: readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o combine combine.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
+resultsPlotter: resultsPlotter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o resultsPlotter resultsPlotter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
+
 mergeSame: mergeSame.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o mergeSame mergeSame.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
@@ -49,6 +52,9 @@ entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
 
 dataFitter: dataFitter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o dataFitter dataFitter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+
+dataFitterVisualiser: dataFitterVisualiser.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o dataFitterVisualiser dataFitterVisualiser.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 
 
 
@@ -105,6 +111,10 @@ clean2:
 	rm *.pcm
 	rm *.so
 	rm main
+	rm dataFitterOld
+	rm resultsPlotter
+	rm entries
+	rm
 
 
 clean: 

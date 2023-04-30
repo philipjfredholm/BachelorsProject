@@ -79,6 +79,8 @@ int main(int argc, char **argv) {
             //Empties unused data to save RAM
             storeInHist dummyHistogram {filename}; 
 
+
+
             myHistogram->addHistograms(dummyHistogram);
 
 
@@ -101,6 +103,7 @@ int main(int argc, char **argv) {
         //measured data and the event mixing have all been added up, only then
         //can the actual normalisation take place properly.
         //.loadProcessed() is the member function to do this
+  
     myHistogram->loadProcessed(); 
     myHistogram->storeHistogramInFile();
 
