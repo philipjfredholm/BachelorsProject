@@ -83,36 +83,39 @@ double v2Extractor(double* values, double* parameters) {
 
 
 
-
 TH1D projectHistogram(TH2D histogram) {
     TH1D returnHistogram("projectedPhi", "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
-
     double numerator;
     double denominator;
-    double errorFactor = 1;
-
+    double errorFactor;
 
     for (int phiBin = 1; phiBin <= histogram.GetNbinsX(); phiBin++) { //not 0 and < because of ROOT's bin convention
         numerator = 0;
         denominator = 0;
+        errorFactor = 0;
 
         //Weighted average
         for (int etaBin = 1; etaBin <= histogram.GetNbinsY(); etaBin++) {
-            errorFactor = std::pow(histogram.GetBinError(phiBin, etaBin), 2);
+            if (histogram.GetBinContent(phiBin, etaBin) == 0) {
+                continue;
+            }
+            errorFactor = 1/std::pow(histogram.GetBinError(phiBin, etaBin)/histogram.GetBinContent(phiBin, etaBin), 2);
             numerator += histogram.GetBinContent(phiBin, etaBin) * errorFactor;
             denominator += errorFactor;
             
         }
 
+        if (denominator == 0) {continue;}
         returnHistogram.SetBinContent(phiBin, numerator/denominator);
-        returnHistogram.SetBinError(phiBin, std::sqrt(denominator));
-
+        
+        returnHistogram.SetBinError(phiBin, std::sqrt(1/denominator)*returnHistogram.GetBinContent(phiBin));
 
     }
 
     return returnHistogram; 
-    
+  
 }
+
 
 
 
@@ -165,7 +168,6 @@ int main(int argc, char **argv) {
 
 
 
-    
     //Defines the fitting function
     TF1 v2Finder("v2", v2Extractor, 0, 2*TMath::Pi()-0.0001, 4);
     v2Finder.SetParNames("Background Amplitude", "Scaling", "v2", "v3", "v4", "v5", "v6", "v7");

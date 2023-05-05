@@ -62,6 +62,10 @@ int main(int argc, char** argv) {
 
     dataset1.Close();
 
+    if (centralityInterval > static_cast<int>(startOfCentralityIntervals.size())-2) {
+        throw std::invalid_argument("That centrality interval is not available!");
+    }
+
 
     //Calculates the final values
     std::vector<std::vector<double>> v2FinalList;
@@ -161,9 +165,9 @@ int main(int argc, char** argv) {
     myLegend.Draw();
 
 
-    gPad->Print("test.pdf");
-
     
+    std::string filename = "resultsCentrality" + std::to_string(startOfCentralityIntervals[centralityInterval]).substr(0,4) + ".pdf";
+    gPad->Print(filename.c_str());
 
     //Runs the application
     canvas.Modified(); 

@@ -75,7 +75,15 @@ double fitFunction(double* values, double* parameters) {
 
 
 TH1D projectHistogram(TH2D histogram) {
-    TH1D returnHistogram("projectedPhi", "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
+    std::string throwAwayString; 
+    /*
+    For some odd reason ROOt needs a string as a name
+    and stores that internally instead of just the object name.
+    It results in memory leaks if I name a histogram the same thing twice,
+    so I need a new name for every histogram. The easiest way to get
+    a random throwaway garbage name is to deliberately leave a string uninitialised.
+    */
+    TH1D returnHistogram(throwAwayString.c_str(), "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
     double numerator;
     double denominator;
     double errorFactor;
@@ -109,15 +117,20 @@ TH1D projectHistogram(TH2D histogram) {
 
 
 
-
 int main(int argc, char **argv) {
     //Argument Processing
     std::string pathToFile = argv[1];
     std::string pathToBackground = argv[2];
-    std::string ptIndexString = argv[3];
-    std::string centralityIndexString = argv[4];
+    std::string plotOption = argv[3];
+    std::string ptIndexString = argv[4];
+    std::string centralityIndexString = argv[5];
     int ptIndex = std::stoi(ptIndexString);
     int centralityIndex = std::stoi(centralityIndexString);
+
+
+    std::vector<Double_t> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
+    std::vector<Double_t> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6};
+
 
     //Creates the application
     char myChar = 'a'; //ROOT requires argv but I do not want to give it.
@@ -134,43 +147,56 @@ int main(int argc, char **argv) {
     dataHistograms.loadProcessed();
     backgroundHistograms.loadProcessed();
 
-    //std::vector<Double_t> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
-    //std::vector<Double_t> startOfPtIntervals {1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6};
-
-    std::vector<std::vector<TH2D>> dataVectorForward = dataHistograms.getForwardProcessed();
-    std::vector<std::vector<TH2D>> backgroundVectorForward = backgroundHistograms.getForwardProcessed();
-    std::vector<std::vector<TH2D>> dataVectorBackward = dataHistograms.getBackwardProcessed();
-    std::vector<std::vector<TH2D>> backgroundVectorBackward = backgroundHistograms.getBackwardProcessed();
-    std::vector<std::vector<TH2D>> dataVectorBackToBack = dataHistograms.getBackToBackProcessed();
-    std::vector<std::vector<TH2D>> backgroundVectorBackToBack = backgroundHistograms.getBackToBackProcessed();
-
     
-    data = projectHistogram(dataVectorForward[ptIndex][centralityIndex]);
-    background = projectHistogram(backgroundVectorForward[ptIndex][0]);
-    std::cout <<  data.GetBinError(10)/data.GetBinContent(10)  << std::endl;
+    if (plotOption == "forward") {
+        std::vector<std::vector<TH2D>> dataVectorForward = dataHistograms.getForwardProcessed();
+        std::vector<std::vector<TH2D>> backgroundVectorForward = backgroundHistograms.getForwardProcessed();
 
-    // Necessary for plotting
+        data = projectHistogram(dataVectorForward[ptIndex][centralityIndex]);
+        background = projectHistogram(backgroundVectorForward[ptIndex][0]);
+
+    }
+    if (plotOption == "backward") {
+        std::vector<std::vector<TH2D>> dataVectorBackward = dataHistograms.getBackwardProcessed();
+        std::vector<std::vector<TH2D>> backgroundVectorBackward = backgroundHistograms.getBackwardProcessed();
+
+        data = projectHistogram(dataVectorBackward[ptIndex][centralityIndex]);
+        background = projectHistogram(backgroundVectorBackward[ptIndex][0]);
+
+    }
+    if (plotOption == "backToBack") {
+        std::vector<std::vector<TH2D>> dataVectorBackToBack = dataHistograms.getBackToBackProcessed();
+        std::vector<std::vector<TH2D>> backgroundVectorBackToBack = backgroundHistograms.getBackToBackProcessed();
+
+        data = projectHistogram(dataVectorBackToBack[ptIndex][centralityIndex]);
+        background = projectHistogram(backgroundVectorBackToBack[ptIndex][0]);
+
+    }
+
+    if ((plotOption != "forward") && (plotOption != "backward") && (plotOption != "backToBack")) {
+        throw(std::invalid_argument("Valid options for the third argument are 'forward', 'backward' and 'backToBack'!"));
+    }
+
+
+    //std::cout <<  data.GetBinError(10)/data.GetBinContent(10)  << std::endl;
+
+    //Necessary for plotting
     double dataMinimum = data.GetMinimum(); 
+    double dataMaximum = data.GetMaximum();
+    data.SetMinimum(dataMinimum*0);
+    data.SetMaximum(dataMaximum*1.1);
     TH1D dataCopy = data; 
     dataCopy.SetName("dataCopy");
     TH1D protonBackground = background; 
 
     
     
-
-
-    //Plotting
+    //Plotting Options
     gROOT->ForceStyle();
     gStyle->SetOptStat(0);
     dataCopy.SetFillColorAlpha(kBlue, 0.5);
     
-    data.GetXaxis()->CenterTitle(true);
-    data.GetYaxis()->CenterTitle(true);
-    data.GetXaxis()->SetTitle("#Delta #varphi");
-    data.GetYaxis()->SetTitle("Scaled Counts");
-    data.GetXaxis()->SetTitleSize(0.04);
-    data.GetYaxis()->SetTitleSize(0.04);
-    data.SetTitle("Shows the Measured Signal and the Fit");
+
     dataCopy.GetXaxis()->CenterTitle(true);
     dataCopy.GetYaxis()->CenterTitle(true);
     dataCopy.GetXaxis()->SetTitle("#Delta #varphi");
@@ -187,32 +213,28 @@ int main(int argc, char **argv) {
     gStyle->SetTitleFontSize(0.04);
 
     TGraph fourierBackground;
-    fourierBackground.SetFillColorAlpha(kOrange, 0.2);
     fourierBackground.SetLineColor(kOrange);
+    fourierBackground.SetLineWidth(2);
 
-    TGraph fourierBackgroundv3;
-    fourierBackgroundv3.SetFillColorAlpha(kMagenta, 0.2);
-    fourierBackgroundv3.SetLineColor(kMagenta);
-    
+
+
 
   
     //Fitting
-    TF1 fitFunctionROOT("fitFunctionROOT", fitFunction, 0.0001, 2*TMath::Pi()-0.0001, 4); // +- 0001 to avoid underflow and overflow bins
     TF1 fitFunctionROOTBackground("fitFunctionROOTBackground", fitFunction, 0.0001, 2*TMath::Pi()-0.0001, 4); // +- 0001 to avoid underflow and overflow bins
-    fitFunctionROOT.SetParNames("Background Scale Factor", "Fourier Harmonic Scale Factor", "v2", "v3", "v4", "v5");
+    fitFunctionROOTBackground.SetParNames("Background Scale Factor", "Fourier Harmonic Scale Factor", "v2", "v3", "v4", "v5");
+    fitFunctionROOTBackground.SetRange(0.0001, 2*TMath::Pi()-0.0001);
     
+    fitFunctionROOTBackground.SetParameters(1, 1, 0.05, 0.005);
+    fitFunctionROOTBackground.SetParLimits(2, 0, 1);
+    fitFunctionROOTBackground.SetParLimits(3, 0, 1);
+    for (int n = 0; n < 4; n++) {
+        fitFunctionROOTBackground.SetParError(n, 0);
+    }
 
 
-    fitFunctionROOT.SetParameter(0, 1); // Proton background initial guess
-    fitFunctionROOT.SetParameter(1, 1); // Fourier harmonics initial guess
-    fitFunctionROOT.SetParameter(2 ,0.0005); // v2 initial guess
-    fitFunctionROOT.SetParameter(3, 0.0001); // v3 initial guess
-    fitFunctionROOT.SetParLimits(2, 0, 1);
-    fitFunctionROOT.SetParLimits(3, 0, 1);
 
- 
-    
-    dataCopy.Fit("fitFunctionROOTBackground", "RQ0 same");
+    dataCopy.Fit("fitFunctionROOTBackground", "R same");
 
 
     
@@ -220,58 +242,31 @@ int main(int argc, char **argv) {
     double fourierScale = fitFunctionROOTBackground.GetParameter(1);
     std::cout << fourierScale << std::endl;
     double v2 = fitFunctionROOTBackground.GetParameter(2);
-    double v3 = fitFunctionROOTBackground.GetParameter(3);
+    //double v3 = fitFunctionROOTBackground.GetParameter(3);
     
 
     protonBackground = protonScale * protonBackground;
-    double backgroundMinimum = protonBackground.GetMinimum();
-    int backgroundBins = protonBackground.GetNbinsX();
-  
-    
-    for (int bin = 0; bin <= backgroundBins; bin++) {
-        protonBackground.AddBinContent(bin ,dataMinimum - backgroundMinimum);
-    }
-
-
-    
-    int numberOfPoints = 1000;
-    double stepLength = 2*TMath::Pi()/1000;
+    int numberOfPoints = 5000;
+    double stepLength = 2*TMath::Pi()/numberOfPoints;
     double fourierValue;
-    double fourierValuev3;
+
 
     for (int position = 0; position < numberOfPoints; position ++) {
-        fourierValue = protonScale*ppHistogramValue(stepLength*position) + fourierScale*(1+2*v2*std::cos(2*stepLength*position)); 
-        fourierValuev3 = fourierValue + fourierScale*(2*v3*std::cos(3*position*stepLength));
+        fourierValue = protonScale*ppHistogramValue(stepLength*position) + fourierScale*(1+2*v2*std::cos(2*stepLength*position));//+2*v3*std::cos(3*stepLength*position)); 
         fourierBackground.AddPoint(stepLength*position, fourierValue);
-        fourierBackgroundv3.AddPoint(stepLength*position, fourierValuev3-0.1);
     }
 
-    fourierBackground.SetPoint(0,0, 0);
-    fourierBackground.SetPoint(1000, 2*TMath::Pi()+2, 0);
-    
-    fourierBackgroundv3.SetPoint(0,0, 0);
-    fourierBackgroundv3.SetPoint(1000, 2*TMath::Pi()+2, 0);
-    
 
-    
 
     dataCopy.Draw("HIST same");
     protonBackground.Draw("HIST same");
-    fourierBackground.Draw("F same");
-    //fourierBackgroundv3.Draw("F same");
-    
-    
-    data.Draw("same ");
-    
-    
-    data.Fit("fitFunctionROOT", "R same");
-    
+    fourierBackground.Draw("same");
 
-    
+
     TLegend myLegend(0.62, 0.7, 0.82, 0.9);
     myLegend.AddEntry(&data, "Measured Data", "l");
-    myLegend.AddEntry(&fitFunctionROOT, "Full Fit", "l");
-    myLegend.AddEntry(&fourierBackground, "pp Background + Elliptic Flow Note y axis", "l");
+    myLegend.AddEntry(&fitFunctionROOTBackground, "#splitline{Full Fit}{#mbox{}}", "l");
+    myLegend.AddEntry(&fourierBackground, "#splitline{pp Background +}{Only Elliptic Flow}", "l");
     myLegend.SetTextSize(0.03);
     
 
@@ -281,7 +276,8 @@ int main(int argc, char **argv) {
 
 
     //Runs the application
-    canvas.Print("test2.pdf");
+    std::string filename = "fitExamplePT" + std::to_string(startOfPtIntervals[ptIndex]).substr(0,4) + "Centrality" + std::to_string(startOfCentralityIntervals[centralityIndex]).substr(0,4) + ".pdf";
+    canvas.Print(filename.c_str());
     canvas.Modified(); 
     canvas.Update();
     app.Run();
