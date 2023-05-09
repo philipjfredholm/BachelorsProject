@@ -276,6 +276,7 @@ int main(int argc, char **argv) {
 
 
     //Runs the application
+    canvas.SetLeftMargin(0.12);
     std::string filename = "fitExamplePT" + std::to_string(startOfPtIntervals[ptIndex]).substr(0,4) + "Centrality" + std::to_string(startOfCentralityIntervals[centralityIndex]).substr(0,4) + ".pdf";
     canvas.Print(filename.c_str());
     canvas.Modified(); 

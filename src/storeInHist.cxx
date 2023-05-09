@@ -496,8 +496,11 @@ void storeInHist::loadProcessed() {
                     }
 
                     if ((histogramBackwardCopy.GetBinContent(phiBin, etaBin) != 0) && (normalisedBackwardBackground.GetBinContent(phiBin, etaBin) != 0)) {
-                        errorFactor = std::sqrt( (1/histogramBackwardCopy.GetBinContent(phiBin, etaBin)) + (1/normalisedBackwardBackground.GetBinContent(phiBin, etaBin)) );
-                        histogramBackward[ptNumber][centralityNumber].SetBinError(phiBin, etaBin, histogramBackward[ptNumber][centralityNumber].GetBinContent(phiBin, etaBin) * errorFactor);
+                        errorFactor = std::pow(histogramBackwardCopy.GetBinError(phiBin, etaBin)/histogramBackwardCopy.GetBinContent(phiBin, etaBin),2);
+                        errorFactor += std::pow(normalisedBackwardBackground.GetBinError(phiBin, etaBin)/normalisedBackwardBackground.GetBinContent(phiBin, etaBin), 2) ;
+                        errorFactor = std::sqrt(errorFactor);
+
+                        histogramBackward[ptNumber][centralityNumber].SetBinError(phiBin, etaBin, histogramBackward[ptNumber][centralityNumber].GetBinContent(phiBin, etaBin) * errorFactor);                        
                     }
 
                 }
@@ -507,7 +510,7 @@ void storeInHist::loadProcessed() {
             
 
             int tpcTracksNormalisation = this->_eventNumberList[ptNumber][centralityNumber];
-            int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; 
+            //int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; 
 
             TH2D forwardTemp = histogramForward[ptNumber][centralityNumber];
             TH2D backwardTemp = histogramBackward[ptNumber][centralityNumber];
@@ -529,14 +532,18 @@ void storeInHist::loadProcessed() {
                 histogramBackToBackCopy = histogramBackToBack[ptNumber][centralityNumber];
                 histogramBackToBack[ptNumber][centralityNumber].Divide(&normalisedBackToBackBackground);
 
-                TH2D backToBackTemp = histogramBackToBack[ptNumber][centralityNumber];
+                
                 
 
                 for (int phiBin = 1; phiBin <= histogramBackToBackCopy.GetNbinsX(); phiBin++) {
                     for (int etaBin = 1; etaBin <= histogramBackToBackCopy.GetNbinsY(); etaBin++) {
                         if ((histogramBackToBackCopy.GetBinContent(phiBin, etaBin) != 0) && (normalisedBackToBackBackground.GetBinContent(phiBin, etaBin) != 0)) {
-                            errorFactor = std::sqrt( (1/histogramBackToBackCopy.GetBinContent(phiBin, etaBin)) + (1/normalisedBackToBackBackground.GetBinContent(phiBin, etaBin)) );
-                            histogramBackToBack[ptNumber][centralityNumber].SetBinError(phiBin, etaBin, histogramForward[ptNumber][centralityNumber].GetBinContent(phiBin, etaBin) * errorFactor);
+                            errorFactor = std::pow(histogramBackToBackCopy.GetBinError(phiBin, etaBin)/histogramBackToBackCopy.GetBinContent(phiBin, etaBin),2);
+                            errorFactor += std::pow(normalisedBackToBackBackground.GetBinError(phiBin, etaBin)/normalisedBackToBackBackground.GetBinContent(phiBin, etaBin), 2) ;
+                            errorFactor = std::sqrt(errorFactor);
+
+                        
+                            histogramBackToBack[ptNumber][centralityNumber].SetBinError(phiBin, etaBin, histogramBackToBack[ptNumber][centralityNumber].GetBinContent(phiBin, etaBin) * errorFactor);
                             
 
                         }
@@ -546,8 +553,8 @@ void storeInHist::loadProcessed() {
 
                 }
 
-
-                backToBackTemp = backToBackTemp*(1.0/fmdTracksNormalisation);
+                TH2D backToBackTemp = histogramBackToBack[ptNumber][centralityNumber];
+                backToBackTemp = backToBackTemp*(1.0/tpcTracksNormalisation);
                 processedBackToBack[ptNumber].push_back(backToBackTemp); 
 
             }

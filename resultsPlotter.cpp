@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     //Plotting
     TGraphErrors finalPlot;
     finalPlot.SetName("finalPlot");
-    finalPlot.SetTitle("Shows values of #it{v_{2}} for various values of #it{p_{T}}; #it{p_{T}} (GeV); #it{v_{2}}");
+    finalPlot.SetTitle("Shows values of #nu_{2} for various values of #it{p_{T}}; #it{p_{T}} (GeV); #it{#nu_{2}}");
 
 
     int counter = 0;

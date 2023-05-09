@@ -22,6 +22,8 @@
 #include <TH2D.h>
 #include <TClonesArray.h>
 #include <TMath.h>
+#include <TLegend.h>
+#include <TStyle.h>
 
 
 /* Purpose
@@ -34,6 +36,49 @@ as dividing by the background to get the true signal. It is also able to
 project the data to the phi-axis and ignore the pseudorapidity values (eta)
 once event mixing has been handled.
  */
+
+
+TH1D projectHistogram(TH2D histogram) {
+    std::string throwAwayName;
+    /*
+    For some odd reason ROOT needs a string as a name
+    and stores that internally instead of just the object name.
+    It results in memory leaks if I name a histogram the same thing twice,
+    so I need a new name for every histogram. The easiest way to get
+    a random throwaway garbage name is to deliberately leave a string uninitialised.
+    */
+    TH1D returnHistogram(throwAwayName.c_str(), "Counts", histogram.GetNbinsX(), 0, 2*TMath::Pi()); 
+    double numerator;
+    double denominator;
+    double errorFactor;
+
+    for (int phiBin = 1; phiBin <= histogram.GetNbinsX(); phiBin++) { //not 0 and < because of ROOT's bin convention
+        numerator = 0;
+        denominator = 0;
+        errorFactor = 0;
+
+        //Weighted average
+        for (int etaBin = 1; etaBin <= histogram.GetNbinsY(); etaBin++) {
+            if (histogram.GetBinContent(phiBin, etaBin) == 0) {
+                continue;
+            }
+            errorFactor = 1/std::pow(histogram.GetBinError(phiBin, etaBin)/histogram.GetBinContent(phiBin, etaBin), 2);
+            numerator += histogram.GetBinContent(phiBin, etaBin) * errorFactor;
+            denominator += errorFactor;
+            
+        }
+
+        if (denominator == 0) {continue;}
+        returnHistogram.SetBinContent(phiBin, numerator/denominator);
+        returnHistogram.SetBinError(phiBin, std::sqrt(1/denominator)*returnHistogram.GetBinContent(phiBin));
+
+    }
+
+    return returnHistogram; 
+
+}
+
+
 
 
 int main(int argc, char **argv) {
@@ -342,19 +387,34 @@ int main(int argc, char **argv) {
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
         myHistogram->loadProcessed();
+        myHistogram->setErrors();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getForwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
 
 
-        TH1D phiProjection = *histogram.ProjectionX();
-
+        TH1D phiProjection = projectHistogram(histogram);
         
-        
-        phiProjection.SetTitle("TPC-ForwardFMD");
+        gPad->SetGrid();
+        gStyle->SetOptStat(0);
+        phiProjection.GetXaxis()->SetTitle("#Delta #varphi");
+        phiProjection.GetYaxis()->SetTitle("Scaled Counts");
+        phiProjection.GetXaxis()->SetTitleSize(0.04);
+        phiProjection.GetYaxis()->SetTitleSize(0.04);
+        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        //phiProjection.SetFillColorAlpha(kBlue, 0.5);
         phiProjection.Draw();
 
+
+
         
+        TLegend myLegend(0.65, 0.7, 0.89, 0.9);
+        myLegend.SetTextSize(0.03);
+        myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
+        myLegend.Draw("same");   
+
         
+        canvas.SetLeftMargin(0.15);
+        canvas.Print("combineExample.pdf");
         canvas.Modified(); 
         canvas.Update();
         app.Run();
