@@ -53,6 +53,11 @@ entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
 dataFitter: dataFitter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o dataFitter dataFitter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 
+
+dataFitterNew: dataFitterNew.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o dataFitterNew dataFitterNew.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
+
+
 dataFitterVisualiser: dataFitterVisualiser.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o dataFitterVisualiser dataFitterVisualiser.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 
