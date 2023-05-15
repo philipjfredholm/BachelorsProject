@@ -102,6 +102,9 @@ int main(int argc, char** argv) {
             v2Final = std::sqrt(v2Forward*v2Backward/v2BackToBack);
             v2ErrorFinal = 0.5*v2Final*std::sqrt(std::pow(v2ErrorForward/v2Forward, 2)+std::pow(v2ErrorBackward/v2Backward, 2)+std::pow(v2ErrorBackToBack/v2BackToBack, 2));
 
+
+
+
             v2FinalList[ptNumber].push_back(v2Final);
             v2ErrorFinalList[ptNumber].push_back(v2ErrorFinal);
 
@@ -125,11 +128,23 @@ int main(int argc, char** argv) {
     double v2ErrorValue;
 
     for (int ptNumber = 0; ptNumber < static_cast<int>(startOfPtIntervals.size()) - 1; ptNumber++) {
+        switch (ptNumber) {
+            case 0:
+                continue;
+            case 1:
+                continue;
+            case 3:
+                continue;
+            case 7:
+                continue;
+        }
+        
         ptMid = (startOfPtIntervals[ptNumber+1] + startOfPtIntervals[ptNumber])/2;
         ptDiff = (startOfPtIntervals[ptNumber+1] - startOfPtIntervals[ptNumber])/2;
 
         v2value = v2FinalList[ptNumber][centralityInterval];
         v2ErrorValue = v2ErrorFinalList[ptNumber][centralityInterval];
+
 
         finalPlot.AddPoint(ptMid, v2value);
         finalPlot.SetPointError(counter, ptDiff, v2ErrorValue);

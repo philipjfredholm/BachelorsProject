@@ -390,8 +390,6 @@ int main(int argc, char **argv) {
         myHistogram->setErrors();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getForwardProcessed();
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
-
-
         TH1D phiProjection = projectHistogram(histogram);
         
         gPad->SetGrid();
@@ -401,20 +399,18 @@ int main(int argc, char **argv) {
         phiProjection.GetXaxis()->SetTitleSize(0.04);
         phiProjection.GetYaxis()->SetTitleSize(0.04);
         phiProjection.SetTitle("Shows TPC-FMD? Correlations");
-        //phiProjection.SetFillColorAlpha(kBlue, 0.5);
-        phiProjection.Draw();
+        phiProjection.SetFillColorAlpha(kBlue, 0.5);
+        phiProjection.Draw("HIST E");
 
 
-
-        
         TLegend myLegend(0.65, 0.7, 0.89, 0.9);
         myLegend.SetTextSize(0.03);
         myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
         myLegend.Draw("same");   
 
-        
+       
         canvas.SetLeftMargin(0.15);
-        canvas.Print("combineExample.pdf");
+        canvas.Print("combineForwardExample.pdf");
         canvas.Modified(); 
         canvas.Update();
         app.Run();
@@ -429,13 +425,32 @@ int main(int argc, char **argv) {
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
         myHistogram->loadProcessed();
+        myHistogram->setErrors();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackwardProcessed();
         std::cout << histogramvector[0].size() << std::endl;
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
+        TH1D phiProjection = projectHistogram(histogram);
 
-        TH1D phiProjection = *histogram.ProjectionX();
-        phiProjection.Draw();
-        phiProjection.SetTitle("TPC-BackwardFMD");
+
+        gPad->SetGrid();
+        gStyle->SetOptStat(0);
+        phiProjection.GetXaxis()->SetTitle("#Delta #varphi");
+        phiProjection.GetYaxis()->SetTitle("Scaled Counts");
+        phiProjection.GetXaxis()->SetTitleSize(0.04);
+        phiProjection.GetYaxis()->SetTitleSize(0.04);
+        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        phiProjection.SetFillColorAlpha(kBlue, 0.5);
+        phiProjection.Draw("HIST E");
+
+
+        TLegend myLegend(0.65, 0.7, 0.89, 0.9);
+        myLegend.SetTextSize(0.03);
+        myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
+        myLegend.Draw("same");   
+
+       
+        canvas.SetLeftMargin(0.15);
+        canvas.Print("combineBackwardExample.pdf");
 
         
         canvas.Modified(); 
@@ -451,17 +466,35 @@ int main(int argc, char **argv) {
         //See the comment earlier in the file about the 
         //purpose of .loadProcessed() 
         myHistogram->loadProcessed();
+        myHistogram->setErrors();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackToBackProcessed();
         //The FMD:s have no pT-data (pT = transverse momentum), so all pT:s 
         //are in the same region and hence the [0] index. Nesting the data in another vector 
         //anyhow is just for purposes of consistency
         TH2D histogram = histogramvector[0][centralityRegion];
+        TH1D phiProjection = projectHistogram(histogram);
 
-        TH1D phiProjection = *histogram.ProjectionX();
-        phiProjection.SetTitle("FMD-FMD");
-        phiProjection.Draw();
 
-        
+
+        gPad->SetGrid();
+        gStyle->SetOptStat(0);
+        phiProjection.GetXaxis()->SetTitle("#Delta #varphi");
+        phiProjection.GetYaxis()->SetTitle("Scaled Counts");
+        phiProjection.GetXaxis()->SetTitleSize(0.04);
+        phiProjection.GetYaxis()->SetTitleSize(0.04);
+        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        phiProjection.SetFillColorAlpha(kBlue, 0.5);
+        phiProjection.Draw("HIST E");
+
+
+        TLegend myLegend(0.65, 0.7, 0.89, 0.9);
+        myLegend.SetTextSize(0.03);
+        myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
+        myLegend.Draw("same");   
+
+       
+        canvas.SetLeftMargin(0.15);
+        canvas.Print("combineBackToBackExample.pdf");
         canvas.Modified(); 
         canvas.Update();
         app.Run();

@@ -181,10 +181,10 @@ int main(int argc, char **argv) {
     //std::cout <<  data.GetBinError(10)/data.GetBinContent(10)  << std::endl;
 
     //Necessary for plotting
-    double dataMinimum = data.GetMinimum(); 
+/*     double dataMinimum = data.GetMinimum(); 
     double dataMaximum = data.GetMaximum();
     data.SetMinimum(dataMinimum*0);
-    data.SetMaximum(dataMaximum*1.1);
+    data.SetMaximum(dataMaximum*1.1); */
     TH1D dataCopy = data; 
     dataCopy.SetName("dataCopy");
     TH1D protonBackground = background; 
@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
     dataCopy.GetYaxis()->SetTitle("Scaled Counts");
     dataCopy.GetXaxis()->SetTitleSize(0.04);
     dataCopy.GetYaxis()->SetTitleSize(0.04);
-    dataCopy.SetTitle("Shows the Measured Signal and the Fit");
+    dataCopy.SetTitle("Shows the Measured Signal and the Fit (TPC-FMD?)");
 
     protonBackground.SetFillColorAlpha(kGreen, 0.2);
     protonBackground.SetTitle("protonBackground");
@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
     fourierBackground.Draw("same");
 
 
-    TLegend myLegend(0.62, 0.7, 0.82, 0.9);
+    TLegend myLegend(0.59, 0.7, 0.80, 0.9);
     myLegend.AddEntry(&data, "Measured Data", "l");
     myLegend.AddEntry(&fitFunctionROOTBackground, "#splitline{Full Fit}{#mbox{}}", "l");
     myLegend.AddEntry(&fourierBackground, "#splitline{pp Background +}{Only Elliptic Flow}", "l");
