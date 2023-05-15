@@ -31,6 +31,7 @@
 /* Purpose:
 The purpose of this file is to be able to read in parts of files
 and process data as well as the event mixing background.
+
 These are just some simple running instructions, and a lot of them
 are left for backwards compatibility reasons.
 
@@ -52,21 +53,17 @@ int main(int argc, char **argv) {
     double etaMin = -6; //eta is the pseudorapidity
     double etaMax = 10;
 
-        //cutOption is just left for backwards compatiblity,
-        //changing it will not change the actual cut option when the 
-        //program runs. 
+
+
+    /*
+    These values below are just left for backwards compatiblity, and 
+    changing them might have unintended consequences. If I had more time
+    I could had cleaned up the syntax more. The real values are set 
+    in the file src/storeInHist.cxx in the member function loadHistograms().
+    */
     Short_t cutOption = 3; 
-
-        //These centrality values are just minimum and maximum bounds for
-        // quickly discarding data so that the program may run faster,
-        //the actual regions are set in the implementation of .loadHistograms()
-        //in src/storeInHist.cxx.
-        //This is simply left for backwards compatibility with earlier versions.
-    double centralityStart = 50; //Centralty is a number between 0 and 100
+    double centralityStart = 50; 
     double centralityStop = 90;
-
-        //The same discussion above as for the centralities holds for 
-        //the pT (transverse momentum) values here as well. 
     double ptStart = 0.2; 
     double ptStop = 6;
 

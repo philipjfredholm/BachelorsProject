@@ -22,12 +22,18 @@
 #include <TClonesArray.h>
 
 
+/*
+This class is used for reading in data and processing it. It was implemented as a class
+to keep all of the moving parts nicely working together.
+*/
+
+
 class storeInHist {
     private:
         //Member Variablies
         std::string _pathToFile; //Where the file is to be stored if storeHistogramInFile() is called
         Int_t _initialised; //For re-implmenting a default constructor since inheritance from
-                            //TObject steals it.
+                            //TObject stole it in an earlier implementation.
 
         //Raw correlation data
         std::vector<std::vector<TH2D>> _storedForwardList;
@@ -39,10 +45,10 @@ class storeInHist {
         std::vector<std::vector<TH2D>> _noCorrelationBackwardList;
         std::vector<std::vector<TH2D>> _noCorrelationBackToBackList;
 
-        //Raw correlation data which has been normalised w.r.t
+        //Raw correlation data which has been 'normalised' w.r.t
         //event-mixing and number of tracks. Note that
         //the data stored here is not acutally useful
-        //until combine.cpp reads calculates things
+        //until combine.cpp calculates things
         //properly with respect to all tracks
         std::vector<std::vector<TH2D>> _processedForwardList;
         std::vector<std::vector<TH2D>> _processedBackwardList;
@@ -50,8 +56,8 @@ class storeInHist {
 
         //Stores number of tracks for different categories so 
         //proper normalisation may take place in loadProcessed()
-        std::vector<std::vector<int>> _eventNumberList; //TPC
-        std::vector<std::vector<int>> _eventNumberListFMD; 
+        std::vector<std::vector<int>> _eventNumberList; //TPC-values
+        std::vector<std::vector<int>> _eventNumberListFMD;  //FMD-values
 
 
         //Member functions
@@ -119,6 +125,8 @@ class storeInHist {
         const std::vector<std::vector<int>> getEventNumberList();
         const std::vector<std::vector<int>> getEventNumberListFMD();
 
+        //Setters
+
         void setForwardHistograms(std::vector<std::vector<TH2D>> newVector);
         void setBackwardHistograms(std::vector<std::vector<TH2D>> newVector);
         void setBackToBackHistograms(std::vector<std::vector<TH2D>> newVector);
@@ -135,21 +143,20 @@ class storeInHist {
         void setEventNumberListFMD(std::vector<std::vector<int>> newVector);
 
         
-
-        //Setters
+        
         void setStorageName(std::string location);
 
         //Other
         void addHistograms(storeInHist secondHistogram);
-        void storeHistogramInFile();
-        void loadProcessed();
-        void setErrors();
-        void setErrors0();
+        void storeHistogramInFile(); 
+        void loadProcessed(); //Creates the histograms which are compensated for event mixing effects.
+        void setErrors(); //Sets the error to the square root of the value of the bin for each bin.
+        void setErrors0(); //Sets the errors to 0 for all bins.
 
 
 
 
-        //ClassDef(storeInHist, 1); //For ROOT compatibility
+      
         
 
 

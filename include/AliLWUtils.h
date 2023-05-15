@@ -3,6 +3,14 @@
 #include <TObject.h>
 
 
+/*
+This file contains class definitions which were given to me by my 
+supervisor to be able to read in the data in the data stored in ROOT-trees.
+The original unmodified versions are stored in the folder 'raw'
+as I had to modify some syntax in some places to get things to work.
+
+*/
+
 class AliLWTPCTrack : public TObject {
   public:
     AliLWTPCTrack();

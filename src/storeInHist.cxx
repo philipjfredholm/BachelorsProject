@@ -1,6 +1,11 @@
 #include "../include/storeInHist.h"
 
-//ClassImp(storeInHist); //For ROOT compatibility
+/*
+This file contains the implementation of the class
+which handles reading in data, processing the data
+and storing the data for later use.
+*/
+
 
 
 //Getters and Setters
@@ -150,7 +155,7 @@ void storeInHist::calculateCorrelation(TH2D& myHistogram, const std::vector<Doub
 
 
 
-//FMD-FMD
+    //FMD-FMD
 void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& phi1, const Double_t& eta1,
                                   const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
                                   const Int_t& mult1, const std::vector<Int_t>& mult2) {
@@ -187,7 +192,7 @@ void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& 
 }
 
 
-//FMD-TPC
+    //FMD-TPC
 void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& phi1, const Double_t& eta1,
                                   const std::vector<Double_t>& phi2, const std::vector<Double_t>& eta2,
                                   const Int_t& mult1) {
@@ -222,7 +227,7 @@ void storeInHist::calculateSingleCorrelation(TH2D& myHistogram, const Double_t& 
 
 
 
-    //Adds class instances of storeInHist, in hindsight maybe I should had use operator+ instead
+    //Adds class instances of storeInHist, in hindsight maybe I should had just defined the operator+ instead
 void storeInHist::addHistograms(storeInHist secondHistogram) {
     if (this->_initialised == 0) { //For compatibility with the dummy default constructor that is implmented later
         //Raw
@@ -371,6 +376,7 @@ void storeInHist::storeHistogramInFile() {
 }
 
 
+    //Sets the error of each bin equal to the square root of that bin.
 void storeInHist::setErrors() {
     for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
         for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_storedForwardList[ptNumber].size()); centralityNumber++) {
@@ -396,6 +402,9 @@ void storeInHist::setErrors() {
 
 }
 
+
+
+    //Sets the error of all bins to 0 (mostly just for debugging purposes)
 void storeInHist::setErrors0() {
     for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
         for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_storedForwardList[ptNumber].size()); centralityNumber++) {
@@ -427,7 +436,8 @@ void storeInHist::setErrors0() {
     //Performs a normalisation w.r.t event mixing and number of tracks 
     //for the raw data and stores the results in a separate member variable.
     //See the general explanation in the readme file for why [0] instead of [ptIndex]
-    //is used in some places
+    //is used in some places. 
+    //Also note that .Sumw2() from ROOT was not used on purpose.
 void storeInHist::loadProcessed() {
     if (this->_initialised == 0) {
         throw(std::logic_error("Error: Trying to process unloaded histograms"));
@@ -471,8 +481,6 @@ void storeInHist::loadProcessed() {
             TH2D normalisedForwardBackground = (1/maxValueForward)*histogramForwardBackground[ptNumber][centralityNumber];
             TH2D normalisedBackwardBackground = (1/maxValueBackward)*histogramBackwardBackground[ptNumber][centralityNumber];
             
-            //histogramForward[ptNumber][centralityNumber].Sumw2();
-            //histogramBackward[ptNumber][centralityNumber].Sumw2();
 
             histogramForwardCopy = histogramForward[ptNumber][centralityNumber];
             histogramBackwardCopy = histogramBackward[ptNumber][centralityNumber];
@@ -510,7 +518,7 @@ void storeInHist::loadProcessed() {
             
 
             int tpcTracksNormalisation = this->_eventNumberList[ptNumber][centralityNumber];
-            //int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; 
+            //int fmdTracksNormalisation = this->_eventNumberListFMD[0][centralityNumber]; //For debugging purposes
 
             TH2D forwardTemp = histogramForward[ptNumber][centralityNumber];
             TH2D backwardTemp = histogramBackward[ptNumber][centralityNumber];
@@ -580,7 +588,7 @@ void storeInHist::loadProcessed() {
 //Constructors
 
 
-    //Dummy default constructor since the default constructor is taken by inheritance from TObject
+    //Dummy default constructor since the default constructor used to be taken by inheritance from TObject in an earlier implementation
 storeInHist::storeInHist(Int_t number) {
     this->_initialised = 0;
     this->_pathToFile = "";
@@ -615,22 +623,6 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
     this->_eventNumberListFMD = *eventNumberListFMDPtr;
 
 
-    //Enables error propagation
-/*     for (int ptNumber = 0; ptNumber < static_cast<int>(this->_storedForwardList.size()); ptNumber++) {
-        for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_storedForwardList[ptNumber].size()); centralityNumber++) {
-            this->_storedForwardList[ptNumber][centralityNumber].Sumw2();
-            this->_storedBackwardList[ptNumber][centralityNumber].Sumw2();
-            this->_storedBackToBackList[0][centralityNumber].Sumw2();
-
-            this->_noCorrelationForwardList[ptNumber][centralityNumber].Sumw2();
-            this->_noCorrelationBackwardList[ptNumber][centralityNumber].Sumw2();
-            this->_noCorrelationBackToBackList[0][centralityNumber].Sumw2();            
-
-        }
-    }
- */
-
-
     //Old versions of the program did not save the processed histograms as member variables 
     // nor in the file. Not reading in processed histograms directly is for backwards compatibility.
     try {
@@ -642,15 +634,6 @@ storeInHist::storeInHist(std::string pathToFile) : _pathToFile{pathToFile} {
         this->_processedBackwardList = *histogramBackwardProcessed;
         this->_processedBackToBackList = *histogramBackToBackProcessed;
 
-        //Enables error propagation
-/*         for (int ptNumber = 0; ptNumber < static_cast<int>(this->_processedForwardList.size()); ptNumber++) {
-            for (int centralityNumber = 0; centralityNumber < static_cast<int>(this->_processedForwardList[ptNumber].size()); centralityNumber++) {
-                this->_processedForwardList[ptNumber][centralityNumber].Sumw2();
-                this->_processedBackwardList[ptNumber][centralityNumber].Sumw2();
-                this->_processedBackToBackList[0][centralityNumber].Sumw2();         
-
-           }
-        } */
 
 
         
@@ -682,6 +665,8 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
                                                     Double_t etaMin, Double_t etaMax,
                                                     Int_t countsPhi, Int_t countsEta,
                                                     Int_t start, Int_t stop) : _pathToFile{pathToFile} {
+    
+    
     //Gets the number of entries in the tree
     TFile dataFile(pathToFile.c_str(), "dataFile", "READ");
     TTree* dataTree = (TTree*)dataFile.Get("LWTree");
@@ -700,7 +685,7 @@ storeInHist::storeInHist(std::string pathToFile, Short_t cutOption,
     
 
     //loadHistogram creates the histograms that are wanted for the different cases. See the readme file for
-    //a more detailed explanation. It is a separate method as it is very long and involved.
+    //a more detailed explanation. loadHistograms() is a separate method as it is very long and involved.
     std::tuple< std::vector<std::vector<std::vector<TH2D>>>, 
         std::vector<std::vector<int>>, std::vector<std::vector<int>> > returnVector = loadHistograms(pathToFile, cutOption,
                                                                                                     centralityMin, centralityMax,
@@ -748,6 +733,16 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
     //Parameters                                      
     Int_t numberOlderEventsToSave = 5;
+
+
+
+    /*
+    As mentioned in readData.cpp, a lot of the arguments passed along as arguments to this function
+    are deprecated. If there was more time, I should of course had cleaned up the syntax but right 
+    now cleaning up the long list of dependencies is not a prioirty.
+    */
+
+
     (void)cutOption; //outdated variable, left in case it should be reimplemented later. Deliberaltely not using static_cast
                     //as it is supposed to be discarded.
 
@@ -765,9 +760,29 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     std::vector<Double_t> startOfCentralityIntervals {50, 60, 65, 70, 75, 80, 85, 90};
     int numberOfEntriesCentrality = static_cast<int>(startOfCentralityIntervals.size());
     int numberOfEntriesPt = static_cast<int>(startOfPtIntervals.size());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-    //Sets up the correct structures of the vectors holding the data for the
-    //various cases so that they may be handled more easily later.
+    
+    /*
+    IIRC the vector class is just a wrapper around pointers, so making nested vectors
+    to represent matrices does not actually declare objects. Unfortunately, this means that
+    there has to be an entire block of code below to assign pointers to objects just to
+    make the syntax workable later on.
+    */
 
         //Data to be stored
     std::vector<std::vector<TH2D>> forwardVector;
@@ -853,7 +868,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
         eventNumbers.push_back(eventNumbersPlaceHolder);
 
 
-        if (ptNumber == 0) { //There are no pT cuts in the fmd:s, structure is kept for consistency
+        if (ptNumber == 0) { //There are no pT cuts in the FMD:s, structure is kept for consistency
             backToBackVector.push_back(placeHolderVector);
             backToBackBackgroundVector.push_back(placeHolderVector);
             
@@ -893,13 +908,29 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
                 eventNumbersFMD[ptNumber].push_back(0);
             }
 
-
         }
-
 
 
     }
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -911,7 +942,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
 
     
     //Creates variables to write the read-in variables to.
-    AliLWEvent* event = new AliLWEvent; //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers
+    AliLWEvent* event = new AliLWEvent; //Not great with raw pointers, but ROOT requires pointers and refuses smart pointers for some reason
     TClonesArray* tpcTrack = new TClonesArray("AliLWTPCTrack"); 
     TClonesArray* fmdTrack = new TClonesArray("AliLWFMDTrack");
     dataTree->SetBranchAddress("Event", &event);
@@ -1040,7 +1071,7 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
             Since the event mixing is by far the biggest time sink, and since that would take equally
             long unnested, I have not bothered with un-nesting the loops. If one were to write
             it from scatch with all the hindsight, these loops should of course be written in an unnested
-            way as that would be much simpler.
+            way as that would be much simpler and the logic would be much easier to follow for un-nested loops.
             */
             
             //Loops through all tracks in the TPC so TPC-FMD correlations can be calculated
@@ -1209,8 +1240,8 @@ std::tuple< std::vector<std::vector<std::vector<TH2D>>>, std::vector<std::vector
     returnVector.push_back(backwardBackgroundVector);
     returnVector.push_back(backToBackBackgroundVector);
 
-    //Sets the minimum number of track to 1 to avoid division by 0 errors later with having
-    //a lot of if statements in .loadProcessed()
+    //Sets the minimum number of track to 1 to avoid division by 0 errors later with needing to have
+    //a lot of if statements in the .loadProcessed() member function.
     for (int ptNumber = 0; ptNumber < numberOfEntriesPt -1 ; ptNumber++) {
         for (int centralityNumber = 0; centralityNumber < numberOfEntriesCentrality -1 ; centralityNumber++) {
             if (eventNumbers[ptNumber][centralityNumber] == 0) {

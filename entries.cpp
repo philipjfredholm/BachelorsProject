@@ -18,7 +18,7 @@
 /* Purpose:
 The only purpose of this program is to give the bash script
 runProgram.sh the number of entries (events) in a given 
-file so that it may properly divide the intervals
+file so that it may properly divide (and hence parallelise) the intervals
 that the readData.cpp file will handle.
 */
 
@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
 
     //Returns the value to the bash script
     std::cout << dataCount << std::endl;
+        //Apparently the only way to return a value to a
+        //bash-script is with 'cout' and not with a return statement for some reason
     //return dataCount;
     
 

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+
+#This script runs the program over all files in a given directory.
+#To parallelise the process, it runs multiple instances of the same
+#program over different events (which in total covers all events in a given file).
+#To make sure that it does not start running on new files before all
+#files have finished running, the program keeps track of the PID:s
+#it has started and waits for all of them to finish.
+
+
 pids="" #Stores active process id:s so that we can wait for all to finish
 maxcores=$2
 fileextension=".root"
@@ -16,6 +25,7 @@ mkdir -p  processedData/disk/DataSets_PbPb/TPCFMDTrees/LHC15o/WithFMD/ #For back
 ls -S ${1}*.root > fileListDescending.txt
 tac fileListDescending.txt > fileListAscending.txt
 rm fileListDescending.txt
+
 
 
 #Starts the reading in of each files 
