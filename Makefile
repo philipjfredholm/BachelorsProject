@@ -105,6 +105,7 @@ clean1:
 	rm include/*.gch
 	rm rootDict.cxx
 	rm *.pcm
+	rm *.so
 	
 
 clean2:
