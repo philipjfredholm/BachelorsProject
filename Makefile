@@ -29,7 +29,11 @@ all: combine.cpp readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlib
 	make readData
 	make entries
 	make dataFitter
+	make dataFitterNew
+	make dataFitterVisualiser
 	make combine 
+	make resultsPlotter
+
 
 #The "make combine" above might need to be commented out on machines which do
 #not have compilers which C++17. ./combine is quite fast so it may run
@@ -44,8 +48,6 @@ combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 resultsPlotter: resultsPlotter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o resultsPlotter resultsPlotter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
-mergeSame: mergeSame.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o mergeSame mergeSame.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
 entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o entries entries.cpp AliLWUtils.o -lROOTlibs $(ROOT) -O3
@@ -100,31 +102,25 @@ libROOTlibs.so: rootDict.cxx $(SOURCES)
 #Cleaning Options
 clean1: 
 	rm *.o
-	rm *.so
 	rm include/*.gch
 	rm rootDict.cxx
+	rm *.pcm
 	
-
 
 clean2:
 	rm readData
 	rm combine
 	rm dataFitter
-	rm bias
-	rm bias2
-	rm biasGenereal
-	rm *.pcm
-	rm *.so
-	rm main
-	rm dataFitterOld
+	rm dataFitterNew
+	rm dataFitterVisualiser
 	rm resultsPlotter
 	rm entries
-	rm
+
 
 
 clean: 
-	clean1
-	clean2
+	make clean1
+	make clean2
 
 
 
@@ -134,30 +130,6 @@ clean:
 test: test.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o test test.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 	clean1
-
-bias: bias.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias bias.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-	
-
-biasGeneral: biasGeneral.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o biasGeneral biasGeneral.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-
-
-bias2: bias2.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias2 bias2.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-
-bias3: bias3.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o bias3 bias3.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-
-biasRead: biasRead.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o biasRead biasRead.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-	clean1
-
-
 
 
 
