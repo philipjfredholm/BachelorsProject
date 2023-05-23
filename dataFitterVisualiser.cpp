@@ -39,11 +39,11 @@ QCD.
  */
 
 
-
+//ROOT is a bit messy so it is easier to do things with global variables in this case.
 TH1D data;
 TH1D background;
 
-
+//Returns the pp-background value for a given angle
 double ppHistogramValue(Double_t x) {
     //Check that the input is valid
     if ((x < 0) || (x > 2*TMath::Pi())) {
@@ -58,7 +58,7 @@ double ppHistogramValue(Double_t x) {
 }
 
 
-
+//Function that the data will be fitted to.
 double fitFunction(double* values, double* parameters) {
     int numberOfHarmonics = sizeof(parameters)-2;
     double backgroundNumber = parameters[0]*ppHistogramValue(values[0]);
@@ -74,6 +74,7 @@ double fitFunction(double* values, double* parameters) {
 } 
 
 
+//Projects 2D histograms to 1D and does the proper weighted-average/error propagation
 TH1D projectHistogram(TH2D histogram) {
     std::string throwAwayString; 
     /*
@@ -182,7 +183,7 @@ int main(int argc, char **argv) {
 
     //Necessary for plotting
 /*     double dataMinimum = data.GetMinimum(); 
-    double dataMaximum = data.GetMaximum();
+    double dataMaximum = data.GetMaximum();             //Uncommenting this block 'zooms out' the plot so that the vertical axis starts at 0.
     data.SetMinimum(dataMinimum*0);
     data.SetMaximum(dataMaximum*1.1); */
     TH1D dataCopy = data; 
@@ -203,7 +204,7 @@ int main(int argc, char **argv) {
     dataCopy.GetYaxis()->SetTitle("Scaled Counts");
     dataCopy.GetXaxis()->SetTitleSize(0.04);
     dataCopy.GetYaxis()->SetTitleSize(0.04);
-    dataCopy.SetTitle("Shows the Measured Signal and the Fit (TPC-FMD?)");
+    dataCopy.SetTitle("Shows the Measured Signal and the Fit (TPC-FMD2)");
 
     protonBackground.SetFillColorAlpha(kGreen, 0.2);
     protonBackground.SetTitle("protonBackground");
@@ -240,7 +241,6 @@ int main(int argc, char **argv) {
     
     double protonScale = fitFunctionROOTBackground.GetParameter(0);
     double fourierScale = fitFunctionROOTBackground.GetParameter(1);
-    std::cout << fourierScale << std::endl;
     double v2 = fitFunctionROOTBackground.GetParameter(2);
     //double v3 = fitFunctionROOTBackground.GetParameter(3);
     
@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
     fourierBackground.Draw("same");
 
 
-    TLegend myLegend(0.59, 0.7, 0.80, 0.9);
+    TLegend myLegend(0.62, 0.7, 0.83, 0.9);
     myLegend.AddEntry(&data, "Measured Data", "l");
     myLegend.AddEntry(&fitFunctionROOTBackground, "#splitline{Full Fit}{#mbox{}}", "l");
     myLegend.AddEntry(&fourierBackground, "#splitline{pp Background +}{Only Elliptic Flow}", "l");
@@ -286,7 +286,6 @@ int main(int argc, char **argv) {
 
 
 }
-
 
 
 

@@ -6,3 +6,9 @@
 #pragma link C++ class storeInHist+;
 
 #endif
+
+
+/*This file is only here to allow ROOT to run in normal
+C++ while also using custom ROOT-classes, see
+the comments in the file 'Makefile'.
+*/

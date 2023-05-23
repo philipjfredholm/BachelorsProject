@@ -398,14 +398,14 @@ int main(int argc, char **argv) {
         phiProjection.GetYaxis()->SetTitle("Scaled Counts");
         phiProjection.GetXaxis()->SetTitleSize(0.04);
         phiProjection.GetYaxis()->SetTitleSize(0.04);
-        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        phiProjection.SetTitle("Shows TPC-FMD1 Correlations");
         phiProjection.SetFillColorAlpha(kBlue, 0.5);
         phiProjection.Draw("HIST E");
 
 
         TLegend myLegend(0.65, 0.7, 0.89, 0.9);
         myLegend.SetTextSize(0.03);
-        myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
+        myLegend.AddEntry(&phiProjection, "#it{p_{T}} 2.0 - 2.5 (GeV)", "l");
         myLegend.Draw("same");   
 
        
@@ -427,7 +427,6 @@ int main(int argc, char **argv) {
         myHistogram->loadProcessed();
         myHistogram->setErrors();
         std::vector<std::vector<TH2D>> histogramvector = myHistogram->getBackwardProcessed();
-        std::cout << histogramvector[0].size() << std::endl;
         TH2D histogram = histogramvector[ptRegion][centralityRegion];
         TH1D phiProjection = projectHistogram(histogram);
 
@@ -438,14 +437,14 @@ int main(int argc, char **argv) {
         phiProjection.GetYaxis()->SetTitle("Scaled Counts");
         phiProjection.GetXaxis()->SetTitleSize(0.04);
         phiProjection.GetYaxis()->SetTitleSize(0.04);
-        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        phiProjection.SetTitle("Shows TPC-FMD2 Correlations");
         phiProjection.SetFillColorAlpha(kBlue, 0.5);
         phiProjection.Draw("HIST E");
 
 
         TLegend myLegend(0.65, 0.7, 0.89, 0.9);
         myLegend.SetTextSize(0.03);
-        myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
+        myLegend.AddEntry(&phiProjection, "#it{p_{T}} 5.0 - 6.0 (GeV)", "l");
         myLegend.Draw("same");   
 
        
@@ -482,7 +481,7 @@ int main(int argc, char **argv) {
         phiProjection.GetYaxis()->SetTitle("Scaled Counts");
         phiProjection.GetXaxis()->SetTitleSize(0.04);
         phiProjection.GetYaxis()->SetTitleSize(0.04);
-        phiProjection.SetTitle("Shows TPC-FMD? Correlations");
+        phiProjection.SetTitle("Shows FMD1-FMD2 Correlations");
         phiProjection.SetFillColorAlpha(kBlue, 0.5);
         phiProjection.Draw("HIST E");
 
@@ -490,7 +489,7 @@ int main(int argc, char **argv) {
         TLegend myLegend(0.65, 0.7, 0.89, 0.9);
         myLegend.SetTextSize(0.03);
         myLegend.AddEntry(&phiProjection, "#splitline{#it{p_{T}} 1.0 - 1.5 (GeV)}{Centrality 50%-60%}", "l");
-        myLegend.Draw("same");   
+        //myLegend.Draw("same");   
 
        
         canvas.SetLeftMargin(0.15);

@@ -36,7 +36,8 @@
 int main(int argc, char** argv) {
     //Argument processing
     std::string pathToFile = argv[1];
-    std::string centralityIntervalString = argv[2];
+    std::string pathToFile2 = argv[2];
+    std::string centralityIntervalString = argv[3];
     int centralityInterval = std::stoi(centralityIntervalString);
 
 
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
     TRint app("app", 0, &myCharPtr);
     TCanvas canvas("canvas", "Title", 0, 0 ,800,600);
 
-    //Reads in the data
+    //Reads in the data from the first run
     TFile dataset1(pathToFile.c_str(), "READ");
 
     std::vector<std::vector<double>> v2ForwardList = *(std::vector<std::vector<double>>*)dataset1.Get("v2ForwardList");
@@ -61,6 +62,42 @@ int main(int argc, char** argv) {
     std::vector<double> startOfPtIntervals = *(std::vector<double>*)dataset1.Get("startOfPtIntervals");
 
     dataset1.Close();
+
+
+    //Reads in data from the second run
+    TFile dataset2(pathToFile2.c_str(), "READ");
+
+    std::vector<std::vector<double>> v2ForwardList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2ForwardList");
+    std::vector<std::vector<double>> v2BackwardList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2BackwardList");;
+    std::vector<std::vector<double>> v2BackToBackList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2BackToBackList");
+
+    std::vector<std::vector<double>> v2ErrorForwardList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2ErrorForwardList");
+    std::vector<std::vector<double>> v2ErrorBackwardList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2ErrorBackwardList");;
+    std::vector<std::vector<double>> v2ErrorBackToBackList2 = *(std::vector<std::vector<double>>*)dataset2.Get("v2ErrorBackToBackList");
+
+    std::vector<double> startOfCentralityIntervals2 = *(std::vector<double>*)dataset2.Get("startOfCentralityIntervals");
+    std::vector<double> startOfPtIntervals2 = *(std::vector<double>*)dataset2.Get("startOfPtIntervals");
+
+    dataset2.Close();
+
+
+    //Merges the two datasets
+    
+    for (int elementNumber = static_cast<int>(startOfPtIntervals2.size()) - 2; elementNumber  >= 0; elementNumber--) { //-2 is intentional
+        startOfPtIntervals.insert(startOfPtIntervals.begin(), startOfPtIntervals2[elementNumber]);
+
+    }
+
+    for (int elementNumber = static_cast<int>(v2ForwardList2.size()) - 1; elementNumber  >= 0; elementNumber--) { //-1 is intentional
+        v2ForwardList.insert(v2ForwardList.begin(), v2ForwardList2[elementNumber]);
+        v2BackwardList.insert(v2BackwardList.begin(), v2BackwardList2[elementNumber]);
+
+        v2ErrorForwardList.insert(v2ErrorForwardList.begin(), v2ErrorForwardList2[elementNumber]);
+        v2ErrorBackwardList.insert(v2ErrorBackwardList.begin(), v2ErrorBackwardList[elementNumber]);
+
+        //The fmd-fmd data does not need to be merged as these results are the same
+    }
+
 
     if (centralityInterval > static_cast<int>(startOfCentralityIntervals.size())-2) {
         throw std::invalid_argument("That centrality interval is not available!");
@@ -128,22 +165,13 @@ int main(int argc, char** argv) {
     double v2ErrorValue;
 
     for (int ptNumber = 0; ptNumber < static_cast<int>(startOfPtIntervals.size()) - 1; ptNumber++) {
-        switch (ptNumber) {
-            case 0:
-                continue;
-            case 1:
-                continue;
-            case 3:
-                continue;
-            case 7:
-                continue;
-        }
         
         ptMid = (startOfPtIntervals[ptNumber+1] + startOfPtIntervals[ptNumber])/2;
         ptDiff = (startOfPtIntervals[ptNumber+1] - startOfPtIntervals[ptNumber])/2;
 
         v2value = v2FinalList[ptNumber][centralityInterval];
         v2ErrorValue = v2ErrorFinalList[ptNumber][centralityInterval];
+        //std::cout << "$" << v2value << "\\pm " << v2ErrorValue << "$" <<  std::endl;
 
 
         finalPlot.AddPoint(ptMid, v2value);
@@ -152,9 +180,6 @@ int main(int argc, char** argv) {
         counter++;
 
 
-        
-
-        
 
     }
 

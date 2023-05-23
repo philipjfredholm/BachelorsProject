@@ -29,10 +29,10 @@ all: combine.cpp readData.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlib
 	make readData
 	make entries
 	make dataFitter
-	make dataFitterNew
 	make dataFitterVisualiser
 	make combine 
 	make resultsPlotter
+	make protonSubtracter
 
 
 #The "make combine" above might need to be commented out on machines which do
@@ -48,16 +48,16 @@ combine: combine.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 resultsPlotter: resultsPlotter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o resultsPlotter resultsPlotter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
 
+protonSubtracter: protonSubtracter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
+	$(RUNL) -o protonSubtracter protonSubtracter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3 
+
+
 
 entries: entries.cpp AliLWUtils.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o entries entries.cpp AliLWUtils.o -lROOTlibs $(ROOT) -O3
 
 dataFitter: dataFitter.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
 	$(RUNL) -o dataFitter dataFitter.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
-
-
-dataFitterNew: dataFitterNew.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
-	$(RUNL) -o dataFitterNew dataFitterNew.cpp AliLWUtils.o storeInHist.o -lROOTlibs $(ROOT) -O3
 
 
 dataFitterVisualiser: dataFitterVisualiser.cpp AliLWUtils.o storeInHist.o rootDict.cxx libROOTlibs.so
@@ -112,8 +112,8 @@ clean2:
 	rm readData
 	rm combine
 	rm dataFitter
-	rm dataFitterNew
 	rm dataFitterVisualiser
+	rm protonSubtracter
 	rm resultsPlotter
 	rm entries
 
