@@ -10,7 +10,7 @@
 
 
 # Instructions
-This repository contains the files used in my (Philip Fredholm's) bachelor's project. For the proper context of what all the things do, please see the thesis/report available at [ADD LINK HERE]. The 
+This repository contains the files used in my (Philip Fredholm's) bachelor's project. For the proper context of what all the things do, please see the thesis/report available [here](https://lup.lub.lu.se/student-papers/search/publication/9125492). The 
 original files which I was given were ROOT-files storing ROOT-trees according to the structure shown in Figure 7 of the report. The various objects were declared and implemented according to the files in the folder `raw`. The end output is the figures seen in the report. Here, I outline the general steps taken to produce these plots. 
 
 1. First, the command `make all` should be entered into the terminal. This will create all the necessary executables according to the naming scheme that a file called i.e. `combine.cpp`
